@@ -4,6 +4,8 @@ import { withSentryConfig } from '@sentry/nextjs/config';
 // Define the base Next.js configuration
 const baseConfig: NextConfig = {
   output: process.env.BUILD_STANDALONE === 'true' ? 'standalone' : undefined,
+  // Playwright / local tooling often hits 127.0.0.1 while Next binds as localhost.
+  allowedDevOrigins: ['127.0.0.1', 'localhost'],
   images: {
     remotePatterns: [
       {

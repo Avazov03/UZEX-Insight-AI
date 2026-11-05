@@ -21,9 +21,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // Defense in depth: every /dashboard page also calls auth.protect() itself,
   // because layouts don't always re-render when pages do (Clerk guidance).
   await requireAuth();
-  // Persisting the sidebar state in the cookie.
+  // Sidebar starts open; user toggle is persisted in cookie.
   const cookieStore = await cookies();
-  const defaultOpen = cookieStore.get('sidebar_state')?.value === 'true';
+  const sidebarCookie = cookieStore.get('sidebar_state')?.value;
+  const defaultOpen = sidebarCookie === undefined ? true : sidebarCookie === 'true';
   return (
     <KBar>
       <SidebarProvider defaultOpen={defaultOpen}>

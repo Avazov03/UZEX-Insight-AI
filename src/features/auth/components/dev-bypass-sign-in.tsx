@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,20 +20,27 @@ export function DevBypassSignIn() {
   const [email, setEmail] = useState('analyst@uzex.local');
   const [password, setPassword] = useState('demo');
   const [loading, setLoading] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   function enter() {
     setLoading(true);
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(
-        'uzex-dev-session',
-        JSON.stringify({ email: email || 'analyst@uzex.local', at: Date.now() })
-      );
-    }
+    window.localStorage.setItem(
+      'uzex-dev-session',
+      JSON.stringify({ email: email || 'analyst@uzex.local', at: Date.now() })
+    );
     router.push('/dashboard/ai-assistant');
   }
 
   return (
-    <div className='bg-card w-full max-w-sm rounded-xl border p-6 shadow-sm'>
+    <div
+      className='bg-card w-full max-w-sm rounded-xl border p-6 shadow-sm'
+      data-testid='dev-bypass-form'
+      data-hydrated={hydrated ? 'true' : 'false'}
+    >
       <div className='mb-4 flex justify-end'>
         <LanguageSelector />
       </div>
@@ -45,13 +52,7 @@ export function DevBypassSignIn() {
         </Badge>
       </div>
 
-      <form
-        className='space-y-4'
-        onSubmit={(e) => {
-          e.preventDefault();
-          enter();
-        }}
-      >
+      <div className='space-y-4'>
         <div className='space-y-2'>
           <Label htmlFor='email'>{t('auth.email')}</Label>
           <Input
@@ -74,12 +75,18 @@ export function DevBypassSignIn() {
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
-        <Button type='submit' className='w-full' disabled={loading}>
+        <Button
+          type='button'
+          className='w-full'
+          disabled={loading || !hydrated}
+          data-testid='dev-bypass-submit'
+          onClick={() => enter()}
+        >
           {loading ? <Icons.spinner className='size-4 animate-spin' /> : null}
           {t('common.continue')}
           <Icons.arrowRight className='size-4' />
         </Button>
-      </form>
+      </div>
 
       <p className='text-muted-foreground mt-4 text-center text-xs'>{t('auth.bypassHint')}</p>
     </div>

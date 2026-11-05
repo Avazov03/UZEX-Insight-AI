@@ -1,0 +1,36 @@
+---
+description: Playwright E2E rules — critical paths, mock LLM, no flaky waits
+alwaysApply: false
+globs: e2e/**/*.{ts,tsx,js,md}
+---
+
+# E2E testing rules (UZEX Insight AI)
+
+## Scope
+
+E2E covers **critical user paths only**:
+- Dev auth bypass login → dashboard
+- Sidebar navigation to core pages
+- AI assistant send/receive with **mocked** `/api/ai/chat`
+- Locale switch smoke
+- Selected a11y (axe) on 2–3 pages
+
+Do **not** duplicate validation/edge cases that belong in unit/component tests.
+
+## Hard rules
+
+1. **Mock the LLM** in E2E (`page.route('**/api/ai/chat', …)`). Never assert against live OpenAI text. Cover ok / 500 / empty / delayed mocks. Quality of model answers = separate evals, not E2E.
+2. Prefer `getByRole` / `getByLabel` / `getByTestId`. Avoid CSS/XPath tied to layout.
+3. **Never** use `waitForTimeout` or `networkidle`. Wait for a specific locator or `waitForResponse`.
+4. Isolate tests; no shared mutable DB state between tests. Use `crypto.randomUUID()` for unique ids (not `Date.now()` alone).
+5. Setup session via fixture/`addInitScript` (localStorage) when possible — UI login only when testing login itself.
+6. XSS: assert payload is treated as text **and** `page.on('dialog')` proves no alert ran.
+7. Config: `trace: 'on-first-retry'`, `forbidOnly: !!process.env.CI`, retries only in CI.
+8. Enforce with `eslint-plugin-playwright` (`npm run lint:e2e`).
+
+## Workflow
+
+1. Update `e2e/TEST_PLAN.md` from product requirements (not from implementation).
+2. Get plan approval if scope grows.
+3. Implement tests to match the plan.
+4. Mutation-check: each test should name the bug it would catch.

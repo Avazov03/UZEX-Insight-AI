@@ -115,7 +115,12 @@ export function LiveAiChat() {
   const [items, setItems] = useState<ChatItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -215,7 +220,11 @@ export function LiveAiChat() {
   }
 
   return (
-    <div className='bg-card flex min-h-[calc(100dvh-8rem)] flex-1 flex-col overflow-hidden rounded-xl border'>
+    <div
+      className='bg-card flex min-h-[calc(100dvh-8rem)] flex-1 flex-col overflow-hidden rounded-xl border'
+      data-testid='ai-chat-root'
+      data-hydrated={hydrated ? 'true' : 'false'}
+    >
       <div className='flex shrink-0 items-center gap-2 border-b px-4 py-3'>
         <div className='bg-primary/10 text-primary flex size-8 items-center justify-center rounded-lg'>
           <Icons.sparkles className='size-4' />
@@ -229,6 +238,7 @@ export function LiveAiChat() {
             type='button'
             size='sm'
             variant='outline'
+            data-testid='ai-new-chat'
             onClick={newChat}
             disabled={loading || items.length === 0}
           >
@@ -300,6 +310,8 @@ export function LiveAiChat() {
           onChange={(e) => setInput(e.target.value)}
           placeholder={t('ai.askMarket')}
           className='min-h-20 resize-none'
+          data-testid='ai-chat-input'
+          aria-label={t('ai.askMarket')}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
@@ -309,7 +321,11 @@ export function LiveAiChat() {
         />
         <div className='flex items-center justify-between gap-2'>
           <p className='text-muted-foreground text-[11px]'>{t('ai.enterHint')}</p>
-          <Button disabled={loading || !input.trim()} onClick={() => void send(input)}>
+          <Button
+            data-testid='ai-chat-send'
+            disabled={loading || !input.trim()}
+            onClick={() => void send(input)}
+          >
             {loading ? (
               <Icons.spinner className='size-4 animate-spin' />
             ) : (
