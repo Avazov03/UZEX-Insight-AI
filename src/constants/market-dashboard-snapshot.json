@@ -1,138 +1,138 @@
 {
   "source": "snapshot",
-  "datasetNote": "PostgreSQL UZEX test datasetidan bir marta hisoblangan snapshot (diagrammalar). AI chat jonli DB orqali ishlaydi.",
+  "datasetNote": "PostgreSQL UZEX test datasetidan FX-normalizatsiya bilan hisoblangan snapshot (diagrammalar). AI chat jonli DB orqali ishlaydi.",
   "kpis": {
-    "totalValueTrn": 206.84,
+    "totalValueTrn": 220.48,
     "totalDeals": 500000,
     "contracts": 6616,
     "participants": 14392,
     "brokers": 120,
-    "delayedDeals": 13536,
-    "delayRatePct": 2.71,
+    "delayedDeals": 17925,
+    "delayRatePct": 3.59,
     "cancelledDeals": 33719,
     "partialDeals": 22648,
-    "yoyValueGrowthPct": -8.4,
+    "yoyValueGrowthPct": 22.1,
     "avgDeliveredPct": 60.9
   },
   "yearlyVolume": [
     {
       "year": "2022",
       "deals": 84299,
-      "valueTrn": 27.32
+      "valueTrn": 29.93
     },
     {
       "year": "2023",
       "deals": 93985,
-      "valueTrn": 34.26
+      "valueTrn": 36.62
     },
     {
       "year": "2024",
       "deals": 106647,
-      "valueTrn": 43.28
+      "valueTrn": 45.9
     },
     {
       "year": "2025",
       "deals": 115763,
-      "valueTrn": 53.24
+      "valueTrn": 55.98
     },
     {
       "year": "2026*",
       "deals": 99306,
-      "valueTrn": 48.74
+      "valueTrn": 52.05
     }
   ],
   "monthlyTrend": [
     {
       "month": "Yan",
       "deals": 6734,
-      "valueTrn": 2.97
+      "valueTrn": 3.19
     },
     {
       "month": "Okt",
       "deals": 18333,
-      "valueTrn": 10.22
+      "valueTrn": 10.53
     },
     {
       "month": "Fev",
       "deals": 6457,
-      "valueTrn": 2.76
+      "valueTrn": 2.97
     },
     {
       "month": "Mar",
       "deals": 7241,
-      "valueTrn": 3.04
+      "valueTrn": 3.33
     },
     {
       "month": "Apr",
       "deals": 7494,
-      "valueTrn": 2.99
+      "valueTrn": 3.34
     },
     {
       "month": "May",
       "deals": 7540,
-      "valueTrn": 3.18
+      "valueTrn": 3.53
     },
     {
       "month": "Iyn",
       "deals": 8578,
-      "valueTrn": 4.03
+      "valueTrn": 4.52
     },
     {
       "month": "Iyl",
       "deals": 10146,
-      "valueTrn": 5.16
+      "valueTrn": 5.62
     },
     {
       "month": "Avg",
       "deals": 10415,
-      "valueTrn": 5.36
+      "valueTrn": 5.72
     },
     {
       "month": "Sen",
       "deals": 16368,
-      "valueTrn": 9.03
+      "valueTrn": 9.31
     }
   ],
   "categoryShare": [
     {
       "name": "Сельскохозяйственная продукция",
-      "amountTrn": 110.52,
-      "value": 53.43
+      "amountTrn": 114.14,
+      "value": 51.77
     },
     {
       "name": "Продовольственные товары",
       "amountTrn": 30.4,
-      "value": 14.7
+      "value": 13.79
     },
     {
       "name": "Нефтепродукты",
       "amountTrn": 25.05,
-      "value": 12.11
+      "value": 11.36
+    },
+    {
+      "name": "Металлопродукция",
+      "amountTrn": 21.33,
+      "value": 9.67
     },
     {
       "name": "Полимерная продукция",
       "amountTrn": 15.11,
-      "value": 7.31
-    },
-    {
-      "name": "Металлопродукция",
-      "amountTrn": 11.31,
-      "value": 5.47
+      "value": 6.85
     },
     {
       "name": "Химическая продукция",
       "amountTrn": 7.69,
-      "value": 3.72
+      "value": 3.49
     },
     {
       "name": "Строительные материалы",
       "amountTrn": 6.62,
-      "value": 3.2
+      "value": 3
     },
     {
       "name": "Промышленные товары",
       "amountTrn": 0.14,
-      "value": 0.07
+      "value": 0.06
     }
   ],
   "dealStatusShare": [
@@ -649,6 +649,13 @@
   ],
   "topParticipants": [
     {
+      "name": "\"СОТЎТО МЕТАЛЛ\" МЧЖ",
+      "role": "Sotuvchi",
+      "region": "Sirdaryo viloyati",
+      "deals": 3614,
+      "valueTrn": 8.05
+    },
+    {
       "name": "\"Mo‘jotat Klaster\" MChJ",
       "role": "Sotuvchi",
       "region": "Xorazm viloyati",
@@ -660,7 +667,14 @@
       "role": "Xaridor",
       "region": "Navoiy viloyati",
       "deals": 10150,
-      "valueTrn": 5.89
+      "valueTrn": 6.08
+    },
+    {
+      "name": "TIZAHI METALL MCHJ",
+      "role": "Sotuvchi",
+      "region": "Surxondaryo viloyati",
+      "deals": 1948,
+      "valueTrn": 5.68
     },
     {
       "name": "SITO‘TOM TEKSTIL MCHJ",
@@ -677,39 +691,25 @@
       "valueTrn": 5.42
     },
     {
-      "name": "\"Boqo‘bo Klaster\" MChJ",
-      "role": "Sotuvchi",
-      "region": "Xorazm viloyati",
-      "deals": 5532,
-      "valueTrn": 5.31
-    },
-    {
-      "name": "\"ҲАРАЙЎМ КИМЁ\" МЧЖ",
-      "role": "Sotuvchi",
-      "region": "Qashqadaryo viloyati",
-      "deals": 10608,
-      "valueTrn": 4.6
-    },
-    {
       "name": "\"Fo‘sor Qurilish\" MChJ",
       "role": "Xaridor",
       "region": "Toshkent shahri",
       "deals": 7174,
-      "valueTrn": 3.04
+      "valueTrn": 3.1
     },
     {
       "name": "\"Moto Group\" MChJ",
       "role": "Xaridor",
       "region": "Surxondaryo viloyati",
       "deals": 3763,
-      "valueTrn": 1.66
+      "valueTrn": 1.71
     },
     {
       "name": "HO‘CHAL GROUP MCHJ",
       "role": "Xaridor",
       "region": "Xorazm viloyati",
       "deals": 2735,
-      "valueTrn": 1.51
+      "valueTrn": 1.56
     },
     {
       "name": "\"Qasi Invest\" MChJ",
@@ -720,97 +720,97 @@
     }
   ],
   "topSeller": {
-    "name": "\"Mo‘jotat Klaster\" MChJ",
-    "deals": 6983,
-    "valueTrn": 7.79
+    "name": "\"СОТЎТО МЕТАЛЛ\" МЧЖ",
+    "deals": 3614,
+    "valueTrn": 8.05
   },
   "topBuyer": {
     "name": "\"Zoket Invest\" OK",
     "deals": 10150,
-    "valueTrn": 5.89
+    "valueTrn": 6.08
   },
   "brokerStats": [
     {
       "name": "\"Gucham Broker\" MChJ",
       "deals": 21471,
       "cancelled": 1462,
-      "delayPct": 4.4,
+      "delayPct": 3.5,
       "sharePct": 4.3
     },
     {
       "name": "KAZEHI BROKER MCHJ",
       "deals": 18911,
       "cancelled": 1155,
-      "delayPct": 8.1,
+      "delayPct": 3.6,
       "sharePct": 3.8
     },
     {
       "name": "\"Somot Broker\" MChJ",
       "deals": 14139,
       "cancelled": 993,
-      "delayPct": 1.7,
+      "delayPct": 3.5,
       "sharePct": 2.8
     },
     {
       "name": "\"Shofin Broker\" MChJ",
       "deals": 14055,
       "cancelled": 966,
-      "delayPct": 2.3,
+      "delayPct": 3.6,
       "sharePct": 2.8
     },
     {
       "name": "\"Kuxon Broker\" MChJ",
       "deals": 13843,
       "cancelled": 964,
-      "delayPct": 1,
+      "delayPct": 3.5,
       "sharePct": 2.8
     },
     {
       "name": "NAXON BROKER AJ",
       "deals": 13145,
       "cancelled": 986,
-      "delayPct": 1,
+      "delayPct": 3.8,
       "sharePct": 2.6
     },
     {
       "name": "\"Bifiyek Broker\" AJ",
       "deals": 11997,
       "cancelled": 832,
-      "delayPct": 1.3,
+      "delayPct": 3.6,
       "sharePct": 2.4
     },
     {
       "name": "KEFI BROKER AJ",
       "deals": 11873,
       "cancelled": 803,
-      "delayPct": 5.1,
+      "delayPct": 3.6,
       "sharePct": 2.4
     },
     {
       "name": "PASUR BROKER MCHJ",
       "deals": 11381,
       "cancelled": 733,
-      "delayPct": 4,
+      "delayPct": 3.4,
       "sharePct": 2.3
     },
     {
       "name": "RUQOM BROKER MCHJ",
       "deals": 11014,
       "cancelled": 715,
-      "delayPct": 6.2,
+      "delayPct": 3.7,
       "sharePct": 2.2
     }
   ],
   "productKpis": {
     "distinctProducts": 697,
     "topCategory": "Сельскохозяйственная продукция",
-    "topCategorySharePct": 53.43
+    "topCategorySharePct": 51.77
   },
   "riskAlerts": [
     {
       "id": "R-01",
       "title": "Yetkazib berish kechikishi",
-      "detail": "13 536 bitim (~2.71%) — delivery_date payment_date+30 kundan keyin",
+      "detail": "17 925 bitim (~3.59%) — delivery_date payment_date+30 kundan keyin",
       "severity": "high",
       "category": "Yetkazib berish"
     },
@@ -862,12 +862,12 @@
       "type": "Broker"
     }
   ],
-  "agriSharePct": 53.43,
-  "ytdValueTrn": 48.74,
+  "agriSharePct": 51.77,
+  "ytdValueTrn": 52.05,
   "brokerHighlights": {
     "highestCancelName": "\"Gucham Broker\" MChJ",
     "highestCancelCount": 1462,
-    "lowestDelayName": "KEFUNUL BROKER MCHJ",
-    "lowestDelayPct": 0.2
+    "lowestDelayName": "QUMI BROKER MCHJ",
+    "lowestDelayPct": 2.9
   }
 }

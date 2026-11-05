@@ -110,10 +110,9 @@ export function AiNavHistory() {
 
   function deleteThread(id: string) {
     if (!window.confirm(t('ai.deleteConfirm'))) return;
-    updateStoredThreads((list) => list.filter((t) => t.id !== id));
+    const remaining = updateStoredThreads((list) => list.filter((t) => t.id !== id));
     if (activeId === id) {
-      const next = loadThreads()[0];
-      setActiveThreadId(next?.id ?? null);
+      setActiveThreadId(remaining[0]?.id ?? null);
     }
     refresh();
   }

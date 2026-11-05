@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { suggestedPrompts } from '../chat';
 import {
   ACTIVE_THREAD_EVENT,
+  THREADS_EVENT,
   createThread,
   getActiveThreadId,
   loadThreads,
@@ -288,32 +289,70 @@ export function LiveAiChat() {
   }, []);
 
   useEffect(() => {
+    /** localStorage is source of truth — never resurrect sidebar-deleted threads. */
+    function syncFromStore(preferredActiveId?: string | null) {
+      const stored = sortThreads(loadThreads());
+      const storedIds = new Set(stored.map((t) => t.id));
+      const active = preferredActiveId ?? activeIdRef.current;
+
+      setThreads((prev) => {
+        const keepActive =
+          prev.find((t) => {
+            if (t.id !== active) return false;
+            if (storedIds.has(t.id)) return false;
+            // empty draft or in-flight reply not flushed yet
+            return (
+              loading ||
+              t.messages.some((m) => m.pending) ||
+              !t.messages.some((m) => m.text.trim() && !m.pending)
+            );
+          }) ?? null;
+
+        const merged = keepActive
+          ? sortThreads([keepActive, ...stored.filter((t) => t.id !== keepActive.id)])
+          : stored;
+
+        if (merged.length) return merged;
+        if (keepActive) return [keepActive];
+        return [createThread()];
+      });
+
+      if (active && !storedIds.has(active)) {
+        const stillHeld = threadsRef.current.some((t) => {
+          if (t.id !== active) return false;
+          return (
+            loading ||
+            t.messages.some((m) => m.pending) ||
+            !t.messages.some((m) => m.text.trim() && !m.pending)
+          );
+        });
+        if (!stillHeld) {
+          const nextId = stored[0]?.id;
+          if (nextId) {
+            setActiveId(nextId);
+          } else {
+            const draft = createThread();
+            setThreads([draft]);
+            setActiveId(draft.id);
+            setActiveThreadId(draft.id);
+          }
+        }
+      }
+    }
+
     function onActive(e: Event) {
       const id = (e as CustomEvent<{ id: string | null }>).detail?.id;
       if (!id || loading) return;
-      if (id === activeIdRef.current) {
-        // same id — still reload messages if sidebar restored from storage
-        const fromStore = loadThreads().find((t) => t.id === id);
-        if (fromStore) {
-          setThreads((prev) => {
-            const others = prev.filter((t) => t.id !== id);
-            return sortThreads([fromStore, ...others]);
-          });
-        }
-        return;
+      syncFromStore(id);
+      if (id !== activeIdRef.current) {
+        setActiveId(id);
+        setError(null);
+        setInput('');
       }
-      setThreads((prev) => {
-        const fromStore = loadThreads().find((t) => t.id === id);
-        if (fromStore) {
-          const others = prev.filter((t) => t.id !== id);
-          return sortThreads([fromStore, ...others]);
-        }
-        if (prev.some((t) => t.id === id)) return prev;
-        return [...prev, { ...createThread(), id }];
-      });
-      setActiveId(id);
-      setError(null);
-      setInput('');
+    }
+
+    function onThreadsChanged() {
+      syncFromStore();
     }
 
     function onNewChat(e: Event) {
@@ -325,21 +364,19 @@ export function LiveAiChat() {
         if (current && current.messages.length === 0) return;
       }
       const fresh = { ...createThread(), id };
-      setThreads((prev) => {
-        const kept = prev.filter((t) =>
-          t.messages.some((m) => m.text.trim() && !m.pending)
-        );
-        return [fresh, ...kept];
-      });
+      const stored = sortThreads(loadThreads());
+      setThreads([fresh, ...stored.filter((t) => t.id !== fresh.id)]);
       setActiveId(id);
       setError(null);
       setInput('');
     }
 
     window.addEventListener(ACTIVE_THREAD_EVENT, onActive);
+    window.addEventListener(THREADS_EVENT, onThreadsChanged);
     window.addEventListener('uzex-ai-new-chat', onNewChat);
     return () => {
       window.removeEventListener(ACTIVE_THREAD_EVENT, onActive);
+      window.removeEventListener(THREADS_EVENT, onThreadsChanged);
       window.removeEventListener('uzex-ai-new-chat', onNewChat);
     };
   }, [loading]);
@@ -353,8 +390,11 @@ export function LiveAiChat() {
 
   useEffect(() => {
     if (!hydrated) return;
-    saveThreads(threads);
-  }, [threads, hydrated]);
+    // Persist without resurrecting threads the sidebar already deleted
+    const storedIds = new Set(loadThreads().map((t) => t.id));
+    const toSave = threads.filter((t) => storedIds.has(t.id) || t.id === activeId);
+    saveThreads(toSave);
+  }, [threads, hydrated, activeId]);
 
   useEffect(() => {
     if (!hydrated || !activeId) return;
