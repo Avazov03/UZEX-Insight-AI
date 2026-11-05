@@ -1,6 +1,8 @@
 'use client';
 
-import PageContainer from '@/components/layout/page-container';
+import PageContainer, {
+  type PageContentWidth
+} from '@/components/layout/page-container';
 import type { InfobarContent } from '@/components/ui/infobar';
 import { useI18n, type MessageKey } from '@/i18n';
 
@@ -11,6 +13,7 @@ interface LocalizedPageContainerProps {
   infoContent?: InfobarContent;
   pageHeaderAction?: React.ReactNode;
   isLoading?: boolean;
+  contentWidth?: PageContentWidth;
 }
 
 export function LocalizedPageContainer({
@@ -19,7 +22,8 @@ export function LocalizedPageContainer({
   children,
   infoContent,
   pageHeaderAction,
-  isLoading
+  isLoading,
+  contentWidth
 }: LocalizedPageContainerProps) {
   const { t } = useI18n();
 
@@ -30,6 +34,7 @@ export function LocalizedPageContainer({
       infoContent={infoContent}
       pageHeaderAction={pageHeaderAction}
       isLoading={isLoading}
+      contentWidth={contentWidth}
     >
       {children}
     </PageContainer>

@@ -85,6 +85,10 @@ async function runTool(name: string, argsJson: string) {
   }
 }
 
+function sse(event: string, data: unknown): string {
+  return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+}
+
 export async function POST(req: Request) {
   try {
     const apiKey = process.env.OPENAI_API_KEY;
@@ -103,59 +107,113 @@ export async function POST(req: Request) {
       locale === 'ru' ? 'Russian' : locale === 'en' ? 'English' : 'Uzbek (Latin script)';
 
     const client = new OpenAI({ apiKey });
+    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
       {
         role: 'system',
         content: `You are UZEX Insight AI, a commodity exchange market analyst.
 Use tools for any numbers. Never invent statistics.
-Dataset is synthetic test data (not live UZEX secrets). Always mention that briefly once.
-Answer in ${language}. Be concise, structured, and cite tool results.`
+Product names in the DB are mostly Russian (e.g. хлопок for paxta/cotton). Pass Russian keywords to tools when useful.
+Dataset is synthetic test data (not live UZEX secrets). Mention that briefly once.
+Answer in ${language}. Be concise and human-readable.
+Use short paragraphs and bullet lists with - when listing.
+Never paste raw JSON, code blocks, or tool payloads in the reply — only natural language with key figures.`
       },
       { role: 'user', content: message }
     ];
 
-    let completion = await client.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-      messages,
-      tools,
-      tool_choice: 'auto',
-      temperature: 0.2
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        const send = (event: string, data: unknown) => {
+          controller.enqueue(encoder.encode(sse(event, data)));
+        };
+
+        try {
+          send('status', { phase: 'analyzing' });
+
+          let completion = await client.chat.completions.create({
+            model,
+            messages,
+            tools,
+            tool_choice: 'auto',
+            temperature: 0.2
+          });
+
+          let choice = completion.choices[0]?.message;
+          const toolTraces: Array<{ name: string }> = [];
+
+          for (let i = 0; i < 3; i++) {
+            const toolCalls = choice?.tool_calls;
+            if (!toolCalls?.length) break;
+
+            messages.push(choice as OpenAI.Chat.Completions.ChatCompletionMessageParam);
+
+            for (const call of toolCalls) {
+              if (call.type !== 'function') continue;
+              send('status', { phase: 'tool', name: call.function.name });
+              const result = await runTool(
+                call.function.name,
+                call.function.arguments || '{}'
+              );
+              toolTraces.push({ name: call.function.name });
+              messages.push({
+                role: 'tool',
+                tool_call_id: call.id,
+                content: JSON.stringify(result)
+              });
+            }
+
+            completion = await client.chat.completions.create({
+              model,
+              messages,
+              tools,
+              temperature: 0.2
+            });
+            choice = completion.choices[0]?.message;
+          }
+
+          send('meta', { tools: toolTraces });
+
+          if (choice?.content) {
+            const text = choice.content;
+            const chunkSize = 16;
+            for (let i = 0; i < text.length; i += chunkSize) {
+              send('token', { t: text.slice(i, i + chunkSize) });
+            }
+          } else {
+            if (choice) {
+              messages.push(choice as OpenAI.Chat.Completions.ChatCompletionMessageParam);
+            }
+            const finalStream = await client.chat.completions.create({
+              model,
+              messages,
+              tool_choice: 'none',
+              temperature: 0.2,
+              stream: true
+            });
+            for await (const part of finalStream) {
+              const t = part.choices[0]?.delta?.content;
+              if (t) send('token', { t });
+            }
+          }
+
+          send('done', { ok: true });
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Unknown error';
+          send('error', { message: msg });
+        } finally {
+          controller.close();
+        }
+      }
     });
 
-    let choice = completion.choices[0]?.message;
-    const toolTraces: Array<{ name: string; result: unknown }> = [];
-
-    // Allow up to 3 tool rounds
-    for (let i = 0; i < 3; i++) {
-      const toolCalls = choice?.tool_calls;
-      if (!toolCalls?.length) break;
-
-      messages.push(choice as OpenAI.Chat.Completions.ChatCompletionMessageParam);
-
-      for (const call of toolCalls) {
-        if (call.type !== 'function') continue;
-        const result = await runTool(call.function.name, call.function.arguments || '{}');
-        toolTraces.push({ name: call.function.name, result });
-        messages.push({
-          role: 'tool',
-          tool_call_id: call.id,
-          content: JSON.stringify(result)
-        });
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Cache-Control': 'no-cache, no-transform',
+        Connection: 'keep-alive'
       }
-
-      completion = await client.chat.completions.create({
-        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-        messages,
-        tools,
-        temperature: 0.2
-      });
-      choice = completion.choices[0]?.message;
-    }
-
-    return NextResponse.json({
-      ok: true,
-      reply: choice?.content ?? '',
-      tools: toolTraces
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';

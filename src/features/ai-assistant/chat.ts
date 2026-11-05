@@ -92,8 +92,8 @@ export const initialMessages = demoChat.get(0);
 export const chatTransport = demoChat.transport({ delayMs: 30 });
 
 export const suggestedPrompts = [
-  '2026-yilda paxta xomashyosi narxi qaysi hududda yuqori?',
-  'Yetkazib berish muddati buzilgan bitimlarni ko‘rsat',
-  '2025 vs 2026 savdo hajmini taqqosla',
-  'Bekor qilingan bitimlar eng ko‘p qaysi brokerda?'
+  '2023 paxta narxi qaysi hududda yuqori?',
+  'Yetkazib berish riskini ko‘rsat',
+  '2023 vs 2024 paxta hajmini taqqosla',
+  'Bozor umumiy holati qanday?'
 ] as const;

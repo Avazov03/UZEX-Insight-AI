@@ -79,15 +79,6 @@ function ToolMarker({ part }: { part: ToolPart }) {
           </MarkerContent>
         )}
       </Marker>
-      {done && part.output != null && (
-        <Bubble variant='outline'>
-          <BubbleContent>
-            <pre className='overflow-x-auto font-mono text-xs'>
-              {JSON.stringify(part.output, null, 2)}
-            </pre>
-          </BubbleContent>
-        </Bubble>
-      )}
       {errored && part.errorText && <p className='text-destructive text-sm'>{part.errorText}</p>}
     </div>
   );

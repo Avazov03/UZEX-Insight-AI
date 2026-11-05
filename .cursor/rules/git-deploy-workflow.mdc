@@ -1,0 +1,40 @@
+---
+description: After code changes, ask before git commit and VPS deploy; confirm with checkmarks
+alwaysApply: true
+---
+
+# Git + server deploy workflow (UZEX Insight AI)
+
+## Remembered infra
+
+- **Repo**: GitHub `Avazov03/UZEX-Insight-AI` (branch `main`)
+- **Live URL**: https://uzex.zonic.fit
+- **VPS**: `ubuntu@3.65.92.39` (private `172.26.11.220`)
+- **SSH key (local)**: `%USERPROFILE%\.ssh\uzex_zonic_key`
+- **App path on server**: `/var/www/uzex-insight/app`
+- **Process**: systemd `uzex-insight` (Next.js on port `3010`)
+- **Proxy**: nginx → `127.0.0.1:3010` (HTTPS via Let’s Encrypt)
+- **DB**: PostgreSQL `uzex_insight` (user `uzex`), 500k deals imported
+- **Env on server**: `/var/www/uzex-insight/app/.env.production` (+ `.env.local`) — never commit secrets
+
+## After the user asks for a project change
+
+1. Implement the change locally (code only).
+2. **Do NOT** auto-commit or auto-deploy.
+3. When the change is done, **ask explicitly** in Uzbek/casual tone, e.g.:
+   - «Gitga commit + push qilaymi va serverga deploy qilaymi?»
+4. Only if the user clearly says yes (`qil`, `ha`, `deploy qil`, etc.):
+   - commit (only when they also want commit; follow user git rules)
+   - push if they want remote updated
+   - deploy: scp/rsync changed files → `npm run build` on VPS (memory-safe) → `sudo systemctl restart uzex-insight`
+5. After finishing, **confirm with checkmarks**, e.g.:
+   - ✅ Kod o‘zgartirildi
+   - ✅ Git commit / push
+   - ✅ Server build + restart
+   - ✅ Live tekshirildi (URL)
+
+## Do not
+
+- Commit or deploy without asking (unless the user already said in the same prompt to commit/deploy).
+- Commit `.env`, keys, or secrets.
+- Force-push or skip hooks unless explicitly requested.

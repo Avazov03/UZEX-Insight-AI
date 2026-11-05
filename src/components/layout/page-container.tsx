@@ -21,6 +21,18 @@ function PageSkeleton() {
   );
 }
 
+/** Adaptive content shell: fluid on small screens, capped on ultrawide. */
+const widthClass = {
+  /** Tables / dashboards — roomy but not endless (~1360px) */
+  default: 'mx-auto w-full max-w-[min(100%,85rem)]',
+  /** Chat / reading — comfortable line length (~896px) */
+  readable: 'mx-auto w-full max-w-[min(100%,56rem)]',
+  /** Full bleed when intentionally needed */
+  full: 'w-full'
+} as const;
+
+export type PageContentWidth = keyof typeof widthClass;
+
 export default function PageContainer({
   children,
   isLoading = false,
@@ -29,7 +41,8 @@ export default function PageContainer({
   pageTitle,
   pageDescription,
   infoContent,
-  pageHeaderAction
+  pageHeaderAction,
+  contentWidth = 'default'
 }: {
   children: React.ReactNode;
   isLoading?: boolean;
@@ -39,6 +52,7 @@ export default function PageContainer({
   pageDescription?: string;
   infoContent?: InfobarContent;
   pageHeaderAction?: React.ReactNode;
+  contentWidth?: PageContentWidth;
 }) {
   if (!access) {
     return (
@@ -58,17 +72,19 @@ export default function PageContainer({
 
   return (
     <div className='flex flex-1 flex-col px-4 pt-2 pb-4 md:px-6 md:pt-4'>
-      {hasHeader && (
-        <div className='mb-4 flex items-start justify-between gap-4'>
-          <Heading
-            title={pageTitle ?? ''}
-            description={pageDescription ?? ''}
-            infoContent={infoContent}
-          />
-          {pageHeaderAction && <div className='shrink-0'>{pageHeaderAction}</div>}
-        </div>
-      )}
-      {content}
+      <div className={`flex min-h-0 flex-1 flex-col ${widthClass[contentWidth]}`}>
+        {hasHeader && (
+          <div className='mb-4 flex items-start justify-between gap-4'>
+            <Heading
+              title={pageTitle ?? ''}
+              description={pageDescription ?? ''}
+              infoContent={infoContent}
+            />
+            {pageHeaderAction && <div className='shrink-0'>{pageHeaderAction}</div>}
+          </div>
+        )}
+        {content}
+      </div>
     </div>
   );
 }

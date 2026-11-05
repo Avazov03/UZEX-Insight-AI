@@ -36,8 +36,27 @@ export async function getMarketOverview() {
   return { totals, byStatus, byYear };
 }
 
+/** Map common UZ/EN aliases to dataset Russian product tokens. */
+export function normalizeProductHint(hint: string): string {
+  const h = hint.trim().toLowerCase();
+  const aliases: Array<[RegExp, string]> = [
+    [/\b(paxta|pakhta|cotton|хлопок)\b/i, 'хлопок'],
+    [/\b(bug.?doy|wheat|пшениц)/i, 'пшениц'],
+    [/\b(neft|oil|нефть)\b/i, 'нефть'],
+    [/\b(gaz|gas)\b/i, 'газ'],
+    [/\b(shakar|sugar|сахар)\b/i, 'сахар'],
+    [/\b(un|flour|мука)\b/i, 'мука'],
+    [/\b(tsement|cement|цемент)\b/i, 'цемент']
+  ];
+  for (const [re, token] of aliases) {
+    if (re.test(h)) return token;
+  }
+  return hint.trim();
+}
+
 export async function analyzeProductPrices(productHint: string, year?: number) {
   const y = year ?? 2026;
+  const hint = normalizeProductHint(productHint);
   const rows = await query<{
     region: string;
     deals: string;
@@ -56,7 +75,7 @@ export async function analyzeProductPrices(productHint: string, year?: number) {
     ORDER BY AVG(amount / NULLIF(quantity * lot, 0)) DESC NULLS LAST
     LIMIT 15
     `,
-    [y, productHint]
+    [y, hint]
   );
 
   const [summary] = await query<{
@@ -72,10 +91,10 @@ export async function analyzeProductPrices(productHint: string, year?: number) {
     WHERE EXTRACT(YEAR FROM deal_date) = $1
       AND product_name ILIKE '%' || $2 || '%'
     `,
-    [y, productHint]
+    [y, hint]
   );
 
-  return { year: y, productHint, summary, byRegion: rows };
+  return { year: y, productHint: hint, originalHint: productHint, summary, byRegion: rows };
 }
 
 export async function detectDeliveryRisk() {
@@ -116,6 +135,7 @@ export async function detectDeliveryRisk() {
 }
 
 export async function compareYears(productHint: string, yearA = 2025, yearB = 2026) {
+  const hint = normalizeProductHint(productHint);
   const rows = await query<{
     year: string;
     deals: string;
@@ -133,7 +153,7 @@ export async function compareYears(productHint: string, yearA = 2025, yearB = 20
     GROUP BY 1
     ORDER BY 1
     `,
-    [yearA, yearB, productHint]
+    [yearA, yearB, hint]
   );
-  return { productHint, years: rows };
+  return { productHint: hint, originalHint: productHint, years: rows };
 }
