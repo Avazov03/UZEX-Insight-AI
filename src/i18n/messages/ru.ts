@@ -264,6 +264,7 @@ export const ru: MessageTree = {
     toolAuction: 'Типы аукционов',
     toolDeadlines: 'Нарушения сроков',
     toolUsd: 'Курс доллара',
+    toolRegion: 'Региональная торговля',
     dataset: 'Датасет',
     datasetBody:
       '500 000 сделок · 6 616 контрактов · синтетические тестовые данные (README). Не реальная статистика UZEX.',

@@ -262,6 +262,7 @@ export const uz = {
     toolAuction: 'Auksion turlari',
     toolDeadlines: 'Muddat buzilishi',
     toolUsd: 'Dollar kursi',
+    toolRegion: 'Hududiy savdo',
     dataset: 'Dataset',
     datasetBody:
       '500 000 bitim · 6 616 shartnoma · sunʼiy test maʼlumotlari (README). Natijalar real UZEX bozor statistikasi emas.',

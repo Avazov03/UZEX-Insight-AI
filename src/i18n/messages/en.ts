@@ -264,6 +264,7 @@ export const en: MessageTree = {
     toolAuction: 'Auction types',
     toolDeadlines: 'Deadline breaches',
     toolUsd: 'USD rate',
+    toolRegion: 'Regional trade',
     dataset: 'Dataset',
     datasetBody:
       '500,000 deals · 6,616 contracts · synthetic test data (README). Not real UZEX statistics.',

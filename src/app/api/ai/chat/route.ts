@@ -379,7 +379,7 @@ DEADLINES / STATUS (README snapshot 2026-10-30):
 STYLE:
 - Concise, human, bullets for lists. No raw JSON. No code blocks unless the user asks how this product works and a tiny example is essential (almost never).
 - For market overview: intro → KPIs (FX UZS) → byCategory top shares → statuses → delivery discipline → 3 problems / 3 positives when asked → same-period YoY → disclaimer + short methodology.
-- If user asks for diagrams/charts: give a clear markdown table from tool numbers and point to Dashboard → Bozor / Overview charts. Do NOT claim data is unavailable.
+- If user asks for diagrams/charts/tables: emit a CLEAN GitHub-flavored markdown table (header row, |---| separator, data rows). The UI renders it as a real table. Never say you cannot show tables. For region questions always include BOTH top5 and bottom5 tables from analyze_region_trade (bottom5 is never "missing").
 ${dealHint ? `\nHINT: Latest message likely refers to deal_no=${dealHint} — use prefetched get_deal_by_number result.` : ''}
 ${
   isMarketOverviewIntent(message)

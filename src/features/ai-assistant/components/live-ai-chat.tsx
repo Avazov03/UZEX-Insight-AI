@@ -34,25 +34,135 @@ function formatInline(text: string): ReactNode[] {
   });
 }
 
-function FormattedReply({ text }: { text: string }) {
-  const lines = text.split('\n');
+function splitTableCells(line: string): string[] {
+  const raw = line.trim().replace(/^\|/, '').replace(/\|$/, '');
+  return raw.split('|').map((c) => c.trim());
+}
+
+function isTableSep(line: string): boolean {
+  const t = line.trim();
+  if (!t.includes('|') && !t.includes('-')) return false;
+  return /^[\s|:-]+$/.test(t) && /-/.test(t);
+}
+
+function isTableRow(line: string): boolean {
+  const t = line.trim();
+  return t.includes('|') && !isTableSep(t);
+}
+
+function MarkdownTable({ rows }: { rows: string[][] }) {
+  if (rows.length === 0) return null;
+  const [header, ...body] = rows;
   return (
-    <div className='space-y-2 text-[15px] leading-relaxed'>
-      {lines.map((line, i) => {
-        const trimmed = line.trim();
-        if (!trimmed) return <div key={i} className='h-2' />;
-        if (/^[-•*]\s+/.test(trimmed)) {
-          return (
-            <div key={i} className='flex gap-2.5 pl-0.5'>
-              <span className='text-muted-foreground mt-2 size-1 shrink-0 rounded-full bg-current' />
-              <span>{formatInline(trimmed.replace(/^[-•*]\s+/, ''))}</span>
-            </div>
-          );
-        }
-        return <p key={i}>{formatInline(line)}</p>;
-      })}
+    <div className='border-border bg-card/40 my-3 overflow-x-auto rounded-xl border'>
+      <table className='w-full min-w-[28rem] border-collapse text-left text-sm'>
+        <thead>
+          <tr className='bg-muted/60 border-border border-b'>
+            {header.map((cell, i) => (
+              <th
+                key={i}
+                className='text-foreground px-3 py-2.5 text-xs font-semibold tracking-wide whitespace-nowrap'
+              >
+                {formatInline(cell)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {body.map((row, ri) => (
+            <tr
+              key={ri}
+              className='border-border/70 hover:bg-muted/30 border-b last:border-b-0'
+            >
+              {header.map((_, ci) => (
+                <td key={ci} className='text-foreground/90 px-3 py-2 whitespace-nowrap'>
+                  {formatInline(row[ci] ?? '')}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
+}
+
+function FormattedReply({ text }: { text: string }) {
+  const lines = text.split('\n');
+  const blocks: ReactNode[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i] ?? '';
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      blocks.push(<div key={`sp-${i}`} className='h-2' />);
+      i += 1;
+      continue;
+    }
+
+    // GFM table: header + separator + rows
+    if (isTableRow(trimmed) && i + 1 < lines.length && isTableSep(lines[i + 1] ?? '')) {
+      const tableLines: string[] = [trimmed];
+      i += 2; // skip separator
+      while (i < lines.length && isTableRow(lines[i] ?? '')) {
+        tableLines.push((lines[i] ?? '').trim());
+        i += 1;
+      }
+      const rows = tableLines.map(splitTableCells);
+      blocks.push(<MarkdownTable key={`tbl-${blocks.length}`} rows={rows} />);
+      continue;
+    }
+
+    const h3 = trimmed.match(/^###\s+(.+)$/);
+    if (h3) {
+      blocks.push(
+        <h3 key={`h3-${i}`} className='text-foreground pt-2 text-base font-semibold tracking-tight'>
+          {formatInline(h3[1] ?? '')}
+        </h3>
+      );
+      i += 1;
+      continue;
+    }
+
+    const h4 = trimmed.match(/^####\s+(.+)$/);
+    if (h4) {
+      blocks.push(
+        <h4 key={`h4-${i}`} className='text-foreground/90 pt-1 text-sm font-semibold'>
+          {formatInline(h4[1] ?? '')}
+        </h4>
+      );
+      i += 1;
+      continue;
+    }
+
+    if (/^[-•*]\s+/.test(trimmed)) {
+      blocks.push(
+        <div key={`li-${i}`} className='flex gap-2.5 pl-0.5'>
+          <span className='text-muted-foreground mt-2 size-1 shrink-0 rounded-full bg-current' />
+          <span>{formatInline(trimmed.replace(/^[-•*]\s+/, ''))}</span>
+        </div>
+      );
+      i += 1;
+      continue;
+    }
+
+    // Skip orphan markdown table separator lines
+    if (isTableSep(trimmed)) {
+      i += 1;
+      continue;
+    }
+
+    blocks.push(
+      <p key={`p-${i}`} className='text-[15px] leading-relaxed'>
+        {formatInline(line)}
+      </p>
+    );
+    i += 1;
+  }
+
+  return <div className='space-y-1.5 text-[15px] leading-relaxed'>{blocks}</div>;
 }
 
 function toolLabel(name: string, t: (key: string) => string): string {
@@ -81,6 +191,8 @@ function toolLabel(name: string, t: (key: string) => string): string {
       return t('ai.toolDeadlines');
     case 'get_usd_rate':
       return t('ai.toolUsd');
+    case 'analyze_region_trade':
+      return t('ai.toolRegion');
     default:
       return name;
   }

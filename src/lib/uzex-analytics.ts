@@ -256,7 +256,7 @@ export async function analyzeRegionTrade(opts: {
   limit?: number;
 }) {
   const year = opts.year ?? 2024;
-  const limit = Math.min(Math.max(opts.limit ?? 20, 1), 50);
+  const limit = Math.min(Math.max(opts.limit ?? 30, 1), 40);
   const hint = (opts.categoryHint || '').trim();
   const agriDefault =
     !hint || /qishloq|сельск|agri|agro|пахта|хлоп|пшениц/i.test(hint);
@@ -296,19 +296,22 @@ export async function analyzeRegionTrade(opts: {
     deals: Number(r.deals),
     amount_uzs: r.amount_uzs,
     amount_trn_uzs: Math.round((Number(r.amount_uzs) / 1e12) * 1000) / 1000,
-    quantity: r.quantity
+    volume_lots: Math.round(Number(r.quantity) || 0)
   }));
 
   const top5 = mapped.slice(0, 5);
-  const bottom5 = mapped.length <= 5 ? mapped : mapped.slice(-5);
+  // True lowest among returned regions (all viloyatlar usually fit in limit)
+  const bottom5 =
+    mapped.length <= 5 ? mapped : mapped.slice(Math.max(0, mapped.length - 5));
 
   return {
     year,
     categoryHint: agriDefault ? 'Сельскохозяйственная продукция (default/match)' : hint,
-    unit: 'amount_uzs = FX-normalized so‘m; quantity = quantity*lot',
+    unit: 'amount_trn_uzs = FX-normalized trillion so‘m; volume_lots = SUM(quantity*lot), not always metric tons',
     regions: mapped,
     top5,
     bottom5,
+    note: 'Always present BOTH top5 and bottom5 tables when the user asks for them. bottom5 is never empty if regions.length > 0.',
     methodology: MONEY_METHODOLOGY
   };
 }
