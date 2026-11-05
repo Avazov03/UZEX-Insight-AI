@@ -25,6 +25,14 @@ export const uz = {
     notifications: 'Bildirishnomalar',
     workspaces: 'Ish maydonlari'
   },
+  kbar: {
+    navigation: 'Navigatsiya',
+    placeholder: 'Buyruq yoki sahifa qidiring…',
+    goTo: '{page} sahifasiga',
+    navigate: 'harakat',
+    open: 'ochish',
+    close: 'yopish'
+  },
   common: {
     language: 'Til',
     theme: 'Mavzu',

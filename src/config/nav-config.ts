@@ -86,35 +86,7 @@ export const navGroups: NavGroup[] = [
         items: []
       }
     ]
-  },
-  {
-    label: 'nav.system' satisfies MessageKey as string,
-    items: [
-      {
-        title: 'nav.account',
-        url: '#',
-        icon: 'account',
-        isActive: true,
-        items: [
-          {
-            title: 'nav.profile',
-            url: '/dashboard/profile',
-            icon: 'profile',
-            shortcut: ['m', 'm']
-          },
-          {
-            title: 'nav.notifications',
-            url: '/dashboard/notifications',
-            icon: 'notification',
-            shortcut: ['n', 'n']
-          },
-          {
-            title: 'nav.workspaces',
-            url: '/dashboard/workspaces',
-            icon: 'workspace'
-          }
-        ]
-      }
-    ]
   }
+  // Hisob / Profil / Bildirishnomalar / Ish maydonlari — yashirilgan (saralash UX).
+  // Kod marshrutlari saqlangan; kerak bo‘lsa shu yerga qayta qo‘shiladi.
 ];

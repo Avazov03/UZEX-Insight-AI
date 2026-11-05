@@ -7,51 +7,53 @@ import { useMemo } from 'react';
 import RenderResults from './render-result';
 import useThemeSwitching from './use-theme-switching';
 import { useFilteredNavGroups } from '@/hooks/use-nav';
+import { useI18n, type MessageKey } from '@/i18n';
 
 export default function KBar({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const { t } = useI18n();
   const filteredGroups = useFilteredNavGroups(navGroups);
 
-  // These action are for the navigation
   const actions = useMemo(() => {
-    // Define navigateTo inside the useMemo callback to avoid dependency array issues
     const navigateTo = (url: string) => {
       router.push(url);
     };
 
     const allItems = filteredGroups.flatMap((group) => group.items);
+    const navSection = t('kbar.navigation');
 
     return allItems.flatMap((navItem) => {
-      // Only include base action if the navItem has a real URL and is not just a container
+      const label = t(navItem.title as MessageKey);
       const baseAction =
         navItem.url !== '#'
           ? {
               id: `${navItem.title.toLowerCase()}Action`,
-              name: navItem.title,
+              name: label,
               shortcut: navItem.shortcut,
-              keywords: navItem.title.toLowerCase(),
-              section: 'Navigation',
-              subtitle: `Go to ${navItem.title}`,
+              keywords: `${label} ${navItem.title}`.toLowerCase(),
+              section: navSection,
+              subtitle: t('kbar.goTo', { page: label }),
               perform: () => navigateTo(navItem.url)
             }
           : null;
 
-      // Map child items into actions
       const childActions =
-        navItem.items?.map((childItem) => ({
-          id: `${childItem.title.toLowerCase()}Action`,
-          name: childItem.title,
-          shortcut: childItem.shortcut,
-          keywords: childItem.title.toLowerCase(),
-          section: navItem.title,
-          subtitle: `Go to ${childItem.title}`,
-          perform: () => navigateTo(childItem.url)
-        })) ?? [];
+        navItem.items?.map((childItem) => {
+          const childLabel = t(childItem.title as MessageKey);
+          return {
+            id: `${childItem.title.toLowerCase()}Action`,
+            name: childLabel,
+            shortcut: childItem.shortcut,
+            keywords: `${childLabel} ${childItem.title}`.toLowerCase(),
+            section: label,
+            subtitle: t('kbar.goTo', { page: childLabel }),
+            perform: () => navigateTo(childItem.url)
+          };
+        }) ?? [];
 
-      // Return only valid actions (ignoring null base actions for containers)
       return baseAction ? [baseAction, ...childActions] : childActions;
     });
-  }, [router, filteredGroups]);
+  }, [router, filteredGroups, t]);
 
   return (
     <KBarProvider actions={actions}>
@@ -59,7 +61,9 @@ export default function KBar({ children }: { children: React.ReactNode }) {
     </KBarProvider>
   );
 }
-const KBarComponent = ({ children }: { children: React.ReactNode }) => {
+
+function KBarComponent({ children }: { children: React.ReactNode }) {
+  const { t } = useI18n();
   useThemeSwitching();
 
   return (
@@ -68,7 +72,10 @@ const KBarComponent = ({ children }: { children: React.ReactNode }) => {
         <KBarPositioner className='bg-black/10 supports-backdrop-filter:backdrop-blur-xs fixed inset-0 z-99999 flex items-start! justify-center p-4! pt-[14vh]!'>
           <KBarAnimator className='bg-popover text-popover-foreground ring-foreground/10 relative mx-auto w-full max-w-[600px] overflow-hidden rounded-xl shadow-lg ring-1'>
             <div className='bg-popover sticky top-0 z-10 border-b'>
-              <KBarSearch className='placeholder:text-muted-foreground w-full border-none bg-transparent px-4 py-3.5 text-sm outline-hidden focus:ring-0 focus:outline-hidden' />
+              <KBarSearch
+                defaultPlaceholder={t('kbar.placeholder')}
+                className='placeholder:text-muted-foreground w-full border-none bg-transparent px-4 py-3.5 text-sm outline-hidden focus:ring-0 focus:outline-hidden'
+              />
             </div>
             <div className='h-[400px]'>
               <RenderResults />
@@ -76,13 +83,13 @@ const KBarComponent = ({ children }: { children: React.ReactNode }) => {
             <div className='text-muted-foreground flex items-center gap-3 border-t px-3 py-2 text-xs'>
               <span className='flex items-center gap-1'>
                 <Kbd>↑</Kbd>
-                <Kbd>↓</Kbd> navigate
+                <Kbd>↓</Kbd> {t('kbar.navigate')}
               </span>
               <span className='flex items-center gap-1'>
-                <Kbd>↵</Kbd> open
+                <Kbd>↵</Kbd> {t('kbar.open')}
               </span>
               <span className='flex items-center gap-1'>
-                <Kbd>esc</Kbd> close
+                <Kbd>esc</Kbd> {t('kbar.close')}
               </span>
             </div>
           </KBarAnimator>
@@ -91,4 +98,4 @@ const KBarComponent = ({ children }: { children: React.ReactNode }) => {
       {children}
     </>
   );
-};
+}

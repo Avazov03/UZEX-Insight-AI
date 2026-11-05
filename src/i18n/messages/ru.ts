@@ -27,6 +27,14 @@ export const ru: MessageTree = {
     notifications: 'Уведомления',
     workspaces: 'Рабочие пространства'
   },
+  kbar: {
+    navigation: 'Навигация',
+    placeholder: 'Команда или поиск…',
+    goTo: 'Перейти: {page}',
+    navigate: 'навигация',
+    open: 'открыть',
+    close: 'закрыть'
+  },
   common: {
     language: 'Язык',
     theme: 'Тема',

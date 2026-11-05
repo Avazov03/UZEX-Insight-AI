@@ -112,34 +112,26 @@ export default function AppSidebar() {
                 <DropdownMenuSeparator />
 
                 <DropdownMenuGroup>
-                  <DropdownMenuItem onClick={() => router.push('/dashboard/profile')}>
-                    <Icons.account className='mr-2 h-4 w-4' />
-                    {t('nav.profile')}
-                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push('/dashboard/ai-assistant')}>
                     <Icons.sparkles className='mr-2 h-4 w-4' />
                     {t('nav.aiAssistant')}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/dashboard/notifications')}>
-                    <Icons.notification className='mr-2 h-4 w-4' />
-                    {t('nav.notifications')}
-                  </DropdownMenuItem>
                 </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      if (bypass) {
-                        router.push('/auth/sign-in');
-                        return;
-                      }
-                      void signOut({ redirectUrl: '/auth/sign-in' });
-                    }}
-                  >
-                    <Icons.logout aria-hidden className='mr-2 h-4 w-4' />
-                    {t('common.signOut')}
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
+                {!bypass ? (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuGroup>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          void signOut({ redirectUrl: '/auth/sign-in' });
+                        }}
+                      >
+                        <Icons.logout aria-hidden className='mr-2 h-4 w-4' />
+                        {t('common.signOut')}
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                  </>
+                ) : null}
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>

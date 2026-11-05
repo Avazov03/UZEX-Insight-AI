@@ -27,6 +27,14 @@ export const en: MessageTree = {
     notifications: 'Notifications',
     workspaces: 'Workspaces'
   },
+  kbar: {
+    navigation: 'Navigation',
+    placeholder: 'Type a command or search…',
+    goTo: 'Go to {page}',
+    navigate: 'navigate',
+    open: 'open',
+    close: 'close'
+  },
   common: {
     language: 'Language',
     theme: 'Theme',
