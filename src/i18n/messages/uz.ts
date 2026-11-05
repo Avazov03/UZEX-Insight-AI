@@ -48,7 +48,7 @@ export const uz = {
     demoAnalyst: 'Demo Analyst',
     noAccess: 'Bu sahifaga ruxsat yo‘q.',
     datasetNote:
-      'Sunʼiy test dataset (2022–30.10.2026). Natijalar real UZEX bozor statistikasi emas.'
+      'PostgreSQL UZEX test datasetidan hisoblangan. Real birja yashirin statistikasi emas.'
   },
   auth: {
     signInTitle: 'UZEX Insight AI ga kirish',
@@ -119,13 +119,13 @@ export const uz = {
     categoryShare: 'Kategoriya ulushi',
     categoryDesc: 'Qiymat bo‘yicha taqsimot (%)',
     recentDeals: 'So‘nggi bitimlar',
-    recentDesc: 'Namuna yozuvlar · test dataset'
+    recentDesc: 'Postgres · eng so‘nggi bitimlar'
   },
   market: {
     agriShare: 'Qishloq xo‘jaligi ulushi',
     agriHint: 'Qiymat bo‘yicha eng katta kategoriya',
     ytdValue: '2026 YTD qiymat',
-    ytdHint: '2025 shu davrga nisbatan +21.1%',
+    ytdHint: '2026 YTD · 2025 to‘liq yilga nisbatan (trend kartochkada)',
     contracts: 'Shartnomalar',
     contractsHint: 'Faol savdo zanjiri',
     byCategory: 'Kategoriyalar bo‘yicha qiymat',
@@ -172,7 +172,7 @@ export const uz = {
     cancelled: 'Bekor qilingan',
     riskMonitor: 'Risk monitoring',
     partial: 'Qisman bajarilgan',
-    partialHint: 'O‘rtacha ~60.9% yetkazilgan',
+    partialHint: 'O‘rtacha yetkazilgan ulush DB dan',
     delay: 'Kechikish',
     delayHint: '{pct}% muddat buzilishi',
     tableTitle: 'Bitimlar va shartnomalar',
@@ -221,7 +221,7 @@ export const uz = {
     cancelled: 'Bekor qilingan',
     cancelledHint: 'Broker / mahsulot kesimida tekshirish',
     partial: 'Qisman bajarilgan',
-    partialHint: 'O‘rtacha yetkazilgan ~60.9%'
+    partialHint: 'O‘rtacha yetkazilgan ulush DB dan'
   },
   ai: {
     conversations: 'Suhbatlar',

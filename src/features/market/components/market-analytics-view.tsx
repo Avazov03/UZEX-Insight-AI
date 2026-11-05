@@ -11,8 +11,8 @@ import {
 } from '@/components/ui/table';
 import { DatasetBanner } from '@/features/shared/components/dataset-banner';
 import { KpiCard } from '@/features/shared/components/kpi-card';
-import { categoryShare, dealStatusShare, marketKpis } from '@/constants/mock-uzex';
-import { formatInt, formatTrn } from '@/lib/uzex-format';
+import { useMarketDashboard } from '@/features/market/hooks/use-market-dashboard';
+import { formatInt, formatPct, formatTrn } from '@/lib/uzex-format';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import {
   ChartConfig,
@@ -28,24 +28,29 @@ const chartConfig = {
 
 export function MarketAnalyticsView() {
   const { t } = useI18n();
+  const { data } = useMarketDashboard();
+
   return (
     <div className='flex flex-1 flex-col gap-4'>
-      <DatasetBanner />
+      <DatasetBanner note={data.datasetNote} />
       <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
         <KpiCard
           label={t('market.agriShare')}
-          value='51.77%'
+          value={`${data.agriSharePct.toFixed(2)}%`}
           hint={t('market.agriHint')}
         />
         <KpiCard
           label={t('market.ytdValue')}
-          value={formatTrn(52.05)}
+          value={formatTrn(data.ytdValueTrn)}
           hint={t('market.ytdHint')}
-          trend={{ value: '+21.1%', up: true }}
+          trend={{
+            value: formatPct(data.kpis.yoyValueGrowthPct),
+            up: data.kpis.yoyValueGrowthPct >= 0
+          }}
         />
         <KpiCard
           label={t('market.contracts')}
-          value={formatInt(marketKpis.contracts)}
+          value={formatInt(data.kpis.contracts)}
           hint={t('market.contractsHint')}
         />
       </div>
@@ -59,7 +64,7 @@ export function MarketAnalyticsView() {
           <CardContent>
             <ChartContainer config={chartConfig} className='aspect-auto h-[280px] w-full'>
               <BarChart
-                data={[...categoryShare]}
+                data={data.categoryShare}
                 layout='vertical'
                 margin={{ left: 16, right: 16 }}
               >
@@ -94,7 +99,7 @@ export function MarketAnalyticsView() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {dealStatusShare.map((row) => (
+                {data.dealStatusShare.map((row) => (
                   <TableRow key={row.status}>
                     <TableCell className='font-medium'>{row.status}</TableCell>
                     <TableCell className='text-right tabular-nums'>

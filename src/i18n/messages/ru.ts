@@ -50,7 +50,7 @@ export const ru: MessageTree = {
     demoAnalyst: 'Demo Analyst',
     noAccess: 'У вас нет доступа к этой странице.',
     datasetNote:
-      'Синтетический тестовый датасет (2022–30.10.2026). Результаты не являются реальной статистикой UZEX.'
+      'Рассчитано из PostgreSQL UZEX тестового датасета. Не является живой/конфиденциальной биржевой статистикой.'
   },
   auth: {
     signInTitle: 'Вход в UZEX Insight AI',
@@ -127,7 +127,7 @@ export const ru: MessageTree = {
     agriShare: 'Доля сельского хозяйства',
     agriHint: 'Крупнейшая категория по стоимости',
     ytdValue: 'Стоимость 2026 YTD',
-    ytdHint: '+21.1% к тому же периоду 2025',
+    ytdHint: '2026 YTD к полному 2025 (тренд на карточке)',
     contracts: 'Контракты',
     contractsHint: 'Активная торговая цепочка',
     byCategory: 'Стоимость по категориям',
@@ -174,7 +174,7 @@ export const ru: MessageTree = {
     cancelled: 'Отменено',
     riskMonitor: 'Мониторинг рисков',
     partial: 'Частично исполнено',
-    partialHint: 'В среднем доставлено ~60.9%',
+    partialHint: 'Средняя доля поставки из БД',
     delay: 'Просрочка',
     delayHint: '{pct}% нарушение срока',
     tableTitle: 'Сделки и контракты',
@@ -223,7 +223,7 @@ export const ru: MessageTree = {
     cancelled: 'Отменено',
     cancelledHint: 'Проверка по брокеру / товару',
     partial: 'Частично исполнено',
-    partialHint: 'В среднем доставлено ~60.9%'
+    partialHint: 'Средняя доля поставки из БД'
   },
   ai: {
     conversations: 'Диалоги',

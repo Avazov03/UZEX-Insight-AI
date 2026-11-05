@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/chart';
 import { Badge } from '@/components/ui/badge';
 import { Icons } from '@/components/icons';
-import { yearlyVolume } from '@/constants/mock-uzex';
+import { useMarketDashboard } from '@/features/market/hooks/use-market-dashboard';
 import { useI18n } from '@/i18n';
 
 const chartConfig = {
@@ -26,6 +26,8 @@ const chartConfig = {
 
 export function BarGraph() {
   const { t } = useI18n();
+  const { data } = useMarketDashboard();
+
   return (
     <Card>
       <CardHeader>
@@ -33,14 +35,14 @@ export function BarGraph() {
           {t('overview.yearlyVolume')}
           <Badge variant='outline'>
             <Icons.chartBar />
-            2022–2026
+            {data.yearlyVolume[0]?.year ?? '—'}–{data.yearlyVolume.at(-1)?.year ?? '—'}
           </Badge>
         </CardTitle>
         <CardDescription>{t('overview.yearlyDesc')}</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className='aspect-auto h-[250px] w-full'>
-          <BarChart data={[...yearlyVolume]} margin={{ left: 12, right: 12 }}>
+          <BarChart data={data.yearlyVolume} margin={{ left: 12, right: 12 }}>
             <CartesianGrid vertical={false} />
             <XAxis dataKey='year' tickLine={false} axisLine={false} tickMargin={8} />
             <ChartTooltip content={<ChartTooltipContent />} />

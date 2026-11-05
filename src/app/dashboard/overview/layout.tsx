@@ -1,5 +1,6 @@
 import { requireAuth } from '@/lib/auth-guard';
 import { OverviewShell } from '@/features/overview/components/overview-shell';
+import { MarketDashboardBoundary } from '@/features/market/components/market-dashboard-boundary';
 import React from 'react';
 
 export default async function OverViewLayout({
@@ -16,11 +17,13 @@ export default async function OverViewLayout({
   await requireAuth();
 
   return (
-    <OverviewShell
-      sales={sales}
-      pie_stats={pie_stats}
-      bar_stats={bar_stats}
-      area_stats={area_stats}
-    />
+    <MarketDashboardBoundary>
+      <OverviewShell
+        sales={sales}
+        pie_stats={pie_stats}
+        bar_stats={bar_stats}
+        area_stats={area_stats}
+      />
+    </MarketDashboardBoundary>
   );
 }

@@ -11,8 +11,8 @@ import {
 } from '@/components/ui/table';
 import { DatasetBanner } from '@/features/shared/components/dataset-banner';
 import { KpiCard } from '@/features/shared/components/kpi-card';
-import { priceSeries, regionalPrices } from '@/constants/mock-uzex';
-import { formatInt } from '@/lib/uzex-format';
+import { useMarketDashboard } from '@/features/market/hooks/use-market-dashboard';
+import { formatInt, formatPct } from '@/lib/uzex-format';
 import { CartesianGrid, Line, LineChart, XAxis } from 'recharts';
 import {
   ChartConfig,
@@ -24,34 +24,48 @@ import {
 } from '@/components/ui/chart';
 
 const chartConfig = {
-  cotton: { label: 'Paxta (mln)', color: 'var(--chart-1)' },
-  wheat: { label: 'Bug‘doy (mln)', color: 'var(--chart-2)' },
-  diesel: { label: 'Dizel (mln)', color: 'var(--chart-3)' }
+  cotton: { label: 'Paxta (mln/t)', color: 'var(--chart-1)' },
+  wheat: { label: 'Bug‘doy (mln/t)', color: 'var(--chart-2)' },
+  diesel: { label: 'Dizel (mln/t)', color: 'var(--chart-3)' }
 } satisfies ChartConfig;
 
 export function PriceIntelligenceView() {
+  const { data } = useMarketDashboard();
+  const { priceKpis, priceSeries, regionalPrices, datasetNote } = data;
+
   return (
     <div className='flex flex-1 flex-col gap-4'>
-      <DatasetBanner />
+      <DatasetBanner note={datasetNote} />
       <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
-        <KpiCard label='Paxta o‘rtacha' value='18.45 mln' hint='2026 oktabr · so‘m/tonna ekv.' />
+        <KpiCard
+          label='Paxta o‘rtacha'
+          value={`${priceKpis.cottonAvgMln.toFixed(2)} mln/t`}
+          hint='2026 · mln so‘m / tonna (kg→tonna normallashtirilgan)'
+        />
         <KpiCard
           label='YoY o‘sish'
-          value='+8.4%'
-          hint='Paxta xomashyosi · 2025 YTD ga nisbatan'
-          trend={{ value: '+8.4%', up: true }}
+          value={formatPct(priceKpis.cottonYoyPct)}
+          hint='Paxta xomashyosi · 2025 ga nisbatan'
+          trend={{
+            value: formatPct(priceKpis.cottonYoyPct),
+            up: priceKpis.cottonYoyPct >= 0
+          }}
         />
-        <KpiCard label='Eng qimmat hudud' value='Qashqadaryo' hint='Paxta o‘rtacha 19.2 mln' />
+        <KpiCard
+          label='Eng qimmat hudud'
+          value={priceKpis.topRegion}
+          hint={`Paxta o‘rtacha ${priceKpis.topRegionAvgMln.toFixed(2)} mln/t`}
+        />
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Narx dinamikasi</CardTitle>
-          <CardDescription>Asosiy tovarlar · mln so‘m (indeks)</CardDescription>
+          <CardDescription>Asosiy tovarlar · mln so‘m / tonna</CardDescription>
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className='aspect-auto h-[280px] w-full'>
-            <LineChart data={[...priceSeries]} margin={{ left: 12, right: 12 }}>
+            <LineChart data={priceSeries} margin={{ left: 12, right: 12 }}>
               <CartesianGrid vertical={false} />
               <XAxis dataKey='month' tickLine={false} axisLine={false} tickMargin={8} />
               <ChartTooltip content={<ChartTooltipContent />} />
@@ -93,7 +107,7 @@ export function PriceIntelligenceView() {
               <TableRow>
                 <TableHead>Hudud</TableHead>
                 <TableHead>Mahsulot</TableHead>
-                <TableHead className='text-right'>O‘rtacha (mln)</TableHead>
+                <TableHead className='text-right'>O‘rtacha (mln/t)</TableHead>
                 <TableHead className='text-right'>Bitimlar</TableHead>
               </TableRow>
             </TableHeader>
@@ -102,7 +116,7 @@ export function PriceIntelligenceView() {
                 <TableRow key={`${row.region}-${row.product}`}>
                   <TableCell className='font-medium'>{row.region}</TableCell>
                   <TableCell>{row.product}</TableCell>
-                  <TableCell className='text-right tabular-nums'>{row.avgMln.toFixed(1)}</TableCell>
+                  <TableCell className='text-right tabular-nums'>{row.avgMln.toFixed(2)}</TableCell>
                   <TableCell className='text-right tabular-nums'>{formatInt(row.deals)}</TableCell>
                 </TableRow>
               ))}

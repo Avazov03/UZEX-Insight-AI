@@ -1,3 +1,5 @@
+'use client';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -9,21 +11,28 @@ import {
 } from '@/components/ui/table';
 import { DatasetBanner } from '@/features/shared/components/dataset-banner';
 import { KpiCard } from '@/features/shared/components/kpi-card';
-import { brokerStats, marketKpis } from '@/constants/mock-uzex';
+import { useMarketDashboard } from '@/features/market/hooks/use-market-dashboard';
 import { formatInt } from '@/lib/uzex-format';
 
 export function BrokersView() {
+  const { data } = useMarketDashboard();
+  const { kpis, brokerStats, brokerHighlights, datasetNote } = data;
+
   return (
     <div className='flex flex-1 flex-col gap-4'>
-      <DatasetBanner />
+      <DatasetBanner note={datasetNote} />
       <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
-        <KpiCard label='Brokerlar' value={String(marketKpis.brokers)} hint='Ro‘yxatdagi brokerlar' />
+        <KpiCard label='Brokerlar' value={String(kpis.brokers)} hint='Ro‘yxatdagi brokerlar' />
         <KpiCard
           label='Eng yuqori bekor'
-          value='Broker Gamma'
-          hint='1 450 bekor qilingan bitim'
+          value={brokerHighlights.highestCancelName}
+          hint={`${formatInt(brokerHighlights.highestCancelCount)} bekor qilingan bitim`}
         />
-        <KpiCard label='Eng past kechikish' value='Broker Delta' hint='2.4% delay rate' />
+        <KpiCard
+          label='Eng past kechikish'
+          value={brokerHighlights.lowestDelayName}
+          hint={`${brokerHighlights.lowestDelayPct.toFixed(1)}% delay rate`}
+        />
       </div>
 
       <Card>

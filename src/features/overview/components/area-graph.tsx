@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/chart';
 import { Badge } from '@/components/ui/badge';
 import { Icons } from '@/components/icons';
-import { monthlyTrend2026 } from '@/constants/mock-uzex';
+import { useMarketDashboard } from '@/features/market/hooks/use-market-dashboard';
 import { useI18n } from '@/i18n';
 
 const chartConfig = {
@@ -22,6 +22,8 @@ const chartConfig = {
 
 export function AreaGraph() {
   const { t } = useI18n();
+  const { data } = useMarketDashboard();
+
   return (
     <Card>
       <CardHeader>
@@ -36,7 +38,7 @@ export function AreaGraph() {
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className='aspect-auto h-[250px] w-full'>
-          <AreaChart data={[...monthlyTrend2026]} margin={{ left: 12, right: 12 }}>
+          <AreaChart data={data.monthlyTrend} margin={{ left: 12, right: 12 }}>
             <defs>
               <linearGradient id='fillValue' x1='0' y1='0' x2='0' y2='1'>
                 <stop offset='5%' stopColor='var(--color-valueTrn)' stopOpacity={0.8} />

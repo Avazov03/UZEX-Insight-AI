@@ -3,7 +3,7 @@
 import { LocalizedPageContainer } from '@/components/i18n/localized-page-container';
 import { DatasetBanner } from '@/features/shared/components/dataset-banner';
 import { KpiCard } from '@/features/shared/components/kpi-card';
-import { marketKpis } from '@/constants/mock-uzex';
+import { useMarketDashboard } from '@/features/market/hooks/use-market-dashboard';
 import { formatInt, formatPct, formatTrn } from '@/lib/uzex-format';
 import { useI18n } from '@/i18n';
 import React from 'react';
@@ -20,6 +20,8 @@ export function OverviewShell({
   area_stats: React.ReactNode;
 }) {
   const { t } = useI18n();
+  const { data } = useMarketDashboard();
+  const { kpis } = data;
 
   return (
     <LocalizedPageContainer
@@ -27,32 +29,35 @@ export function OverviewShell({
       descriptionKey='pages.overview.description'
     >
       <div className='flex flex-1 flex-col gap-4'>
-        <DatasetBanner />
+        <DatasetBanner note={data.datasetNote} />
 
         <div className='*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs md:grid-cols-2 lg:grid-cols-4'>
           <KpiCard
             label={t('overview.totalValue')}
-            value={formatTrn(marketKpis.totalValueTrn)}
+            value={formatTrn(kpis.totalValueTrn)}
             hint={t('overview.totalValueHint')}
-            trend={{ value: formatPct(marketKpis.yoyValueGrowthPct), up: true }}
+            trend={{
+              value: formatPct(kpis.yoyValueGrowthPct),
+              up: kpis.yoyValueGrowthPct >= 0
+            }}
           />
           <KpiCard
             label={t('overview.deals')}
-            value={formatInt(marketKpis.totalDeals)}
-            hint={t('overview.contractsHint', { count: formatInt(marketKpis.contracts) })}
+            value={formatInt(kpis.totalDeals)}
+            hint={t('overview.contractsHint', { count: formatInt(kpis.contracts) })}
           />
           <KpiCard
             label={t('overview.participants')}
-            value={formatInt(marketKpis.participants)}
-            hint={t('overview.brokersHint', { count: marketKpis.brokers })}
+            value={formatInt(kpis.participants)}
+            hint={t('overview.brokersHint', { count: kpis.brokers })}
           />
           <KpiCard
             label={t('overview.deliveryDelay')}
-            value={`${marketKpis.delayRatePct}%`}
-            hint={t('overview.delayedHint', { count: formatInt(marketKpis.delayedDeals) })}
+            value={`${kpis.delayRatePct}%`}
+            hint={t('overview.delayedHint', { count: formatInt(kpis.delayedDeals) })}
             trend={{
               value: t('overview.cancelledTrend', {
-                count: formatInt(marketKpis.cancelledDeals)
+                count: formatInt(kpis.cancelledDeals)
               }),
               up: false
             }}

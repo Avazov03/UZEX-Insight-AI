@@ -2,28 +2,34 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { recentDeals } from '@/constants/mock-uzex';
+import { useMarketDashboard } from '@/features/market/hooks/use-market-dashboard';
 import { formatMln } from '@/lib/uzex-format';
 import { useI18n } from '@/i18n';
 
 function statusVariant(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
-  if (status.includes('Bekor') || status.includes('kechik') || status.includes('Отмен') || status.includes('Cancel'))
+  if (
+    /bekor|kechik|аннул|отмен|cancel/i.test(status)
+  ) {
     return 'destructive';
-  if (status.includes('To‘liq') || status.includes('To‘langan') || status.includes('исполн') || status.includes('Paid'))
+  }
+  if (/to‘liq|to'liq|to‘langan|to'langan|исполн|paid|выполнен/i.test(status)) {
     return 'default';
+  }
   return 'secondary';
 }
 
 export function RecentSales() {
   const { t } = useI18n();
+  const { data } = useMarketDashboard();
+
   return (
     <Card className='h-full'>
       <CardHeader>
         <CardTitle>{t('overview.recentDeals')}</CardTitle>
-        <CardDescription>{t('overview.recentDesc')}</CardDescription>
+        <CardDescription>Postgres · so‘nggi bitimlar</CardDescription>
       </CardHeader>
       <CardContent className='grid gap-4'>
-        {recentDeals.slice(0, 5).map((deal) => (
+        {data.recentDeals.slice(0, 5).map((deal) => (
           <div key={deal.id} className='flex items-center justify-between gap-3'>
             <div className='min-w-0 space-y-1'>
               <p className='truncate text-sm font-medium'>{deal.product}</p>

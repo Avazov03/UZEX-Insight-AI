@@ -1,3 +1,5 @@
+'use client';
+
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -10,33 +12,38 @@ import {
 } from '@/components/ui/table';
 import { DatasetBanner } from '@/features/shared/components/dataset-banner';
 import { KpiCard } from '@/features/shared/components/kpi-card';
-import { topProducts } from '@/constants/mock-uzex';
+import { useMarketDashboard } from '@/features/market/hooks/use-market-dashboard';
 import { formatInt, formatTrn } from '@/lib/uzex-format';
 
 export function ProductsCatalogView() {
+  const { data } = useMarketDashboard();
+  const { productKpis, topProducts, datasetNote } = data;
+
   return (
     <div className='flex flex-1 flex-col gap-4'>
-      <DatasetBanner />
+      <DatasetBanner note={datasetNote} />
       <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
-        <KpiCard label='Asosiy mahsulotlar' value='229' hint='Standart nomlar (normalizatsiya)' />
         <KpiCard
-          label='Yozuv variantlari'
-          value='697'
-          hint='Bitimlarda uchraydigan nomlar xilma-xilligi'
+          label='Distinct mahsulotlar'
+          value={formatInt(productKpis.distinctProducts)}
+          hint='deals.product_name bo‘yicha'
         />
         <KpiCard
           label='Top kategoriya'
-          value='Qishloq xo‘jaligi'
-          hint='Qiymatning ~52% ulushi'
+          value={productKpis.topCategory}
+          hint={`Qiymatning ~${productKpis.topCategorySharePct.toFixed(1)}% ulushi`}
+        />
+        <KpiCard
+          label='Top mahsulot bitimlari'
+          value={formatInt(topProducts[0]?.deals ?? 0)}
+          hint={topProducts[0]?.name ?? '—'}
         />
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Mahsulotlar katalogi</CardTitle>
-          <CardDescription>
-            Nom normalizatsiyasi: marka / sort / o‘lcham farqi saqlanadi
-          </CardDescription>
+          <CardDescription>Eng ko‘p bitimga ega mahsulotlar (Postgres)</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -44,7 +51,6 @@ export function ProductsCatalogView() {
               <TableRow>
                 <TableHead>Mahsulot</TableHead>
                 <TableHead>Kategoriya</TableHead>
-                <TableHead className='text-right'>Variantlar</TableHead>
                 <TableHead className='text-right'>Bitimlar</TableHead>
                 <TableHead className='text-right'>Qiymat</TableHead>
               </TableRow>
@@ -56,7 +62,6 @@ export function ProductsCatalogView() {
                   <TableCell>
                     <Badge variant='secondary'>{p.category}</Badge>
                   </TableCell>
-                  <TableCell className='text-right tabular-nums'>{p.variants}</TableCell>
                   <TableCell className='text-right tabular-nums'>{formatInt(p.deals)}</TableCell>
                   <TableCell className='text-right tabular-nums'>{formatTrn(p.valueTrn)}</TableCell>
                 </TableRow>

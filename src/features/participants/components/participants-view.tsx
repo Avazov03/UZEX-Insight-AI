@@ -1,3 +1,5 @@
+'use client';
+
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -10,27 +12,38 @@ import {
 } from '@/components/ui/table';
 import { DatasetBanner } from '@/features/shared/components/dataset-banner';
 import { KpiCard } from '@/features/shared/components/kpi-card';
-import { marketKpis, topParticipants } from '@/constants/mock-uzex';
+import { useMarketDashboard } from '@/features/market/hooks/use-market-dashboard';
 import { formatInt, formatTrn } from '@/lib/uzex-format';
 
 export function ParticipantsView() {
+  const { data } = useMarketDashboard();
+  const { kpis, topParticipants, topSeller, topBuyer, datasetNote } = data;
+
   return (
     <div className='flex flex-1 flex-col gap-4'>
-      <DatasetBanner />
+      <DatasetBanner note={datasetNote} />
       <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
         <KpiCard
           label='Ishtirokchilar'
-          value={formatInt(marketKpis.participants)}
+          value={formatInt(kpis.participants)}
           hint='Sotuvchi va xaridor STIRlar'
         />
-        <KpiCard label='Top sotuvchi' value='Agro Trade LLC' hint='6.4 tn savdo qiymati' />
-        <KpiCard label='Top xaridor' value='Grain Market JSC' hint='5.1 tn savdo qiymati' />
+        <KpiCard
+          label='Top sotuvchi'
+          value={topSeller?.name ?? '—'}
+          hint={topSeller ? `${formatTrn(topSeller.valueTrn)} savdo` : '—'}
+        />
+        <KpiCard
+          label='Top xaridor'
+          value={topBuyer?.name ?? '—'}
+          hint={topBuyer ? `${formatTrn(topBuyer.valueTrn)} savdo` : '—'}
+        />
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Ishtirokchilar tahlili</CardTitle>
-          <CardDescription>Eng faol ishtirokchilar (namuna)</CardDescription>
+          <CardDescription>Eng faol sotuvchi / xaridorlar (Postgres)</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -45,7 +58,7 @@ export function ParticipantsView() {
             </TableHeader>
             <TableBody>
               {topParticipants.map((p) => (
-                <TableRow key={p.name}>
+                <TableRow key={`${p.role}-${p.name}`}>
                   <TableCell className='font-medium'>{p.name}</TableCell>
                   <TableCell>
                     <Badge variant={p.role === 'Sotuvchi' ? 'default' : 'secondary'}>

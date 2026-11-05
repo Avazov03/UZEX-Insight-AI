@@ -1,31 +1,36 @@
+'use client';
+
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DatasetBanner } from '@/features/shared/components/dataset-banner';
 import { KpiCard } from '@/features/shared/components/kpi-card';
-import { marketKpis, riskAlerts } from '@/constants/mock-uzex';
+import { useMarketDashboard } from '@/features/market/hooks/use-market-dashboard';
 import { formatInt } from '@/lib/uzex-format';
 import { Icons } from '@/components/icons';
 
 export function RiskView() {
+  const { data } = useMarketDashboard();
+  const { kpis, riskAlerts, datasetNote } = data;
+
   return (
     <div className='flex flex-1 flex-col gap-4'>
-      <DatasetBanner />
+      <DatasetBanner note={datasetNote} />
       <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
         <KpiCard
           label='Kechikish darajasi'
-          value={`${marketKpis.delayRatePct}%`}
-          hint={`${formatInt(marketKpis.delayedDeals)} bitim`}
+          value={`${kpis.delayRatePct}%`}
+          hint={`${formatInt(kpis.delayedDeals)} bitim`}
           trend={{ value: 'Monitoring', up: false }}
         />
         <KpiCard
           label='Bekor qilingan'
-          value={formatInt(marketKpis.cancelledDeals)}
+          value={formatInt(kpis.cancelledDeals)}
           hint='Broker / mahsulot kesimida tekshirish'
         />
         <KpiCard
           label='Qisman bajarilgan'
-          value={formatInt(marketKpis.partialDeals)}
-          hint='O‘rtacha yetkazilgan ~60.9%'
+          value={formatInt(kpis.partialDeals)}
+          hint={`O‘rtacha yetkazilgan ~${kpis.avgDeliveredPct}%`}
         />
       </div>
 

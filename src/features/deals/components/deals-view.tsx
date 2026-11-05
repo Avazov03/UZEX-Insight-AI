@@ -1,3 +1,5 @@
+'use client';
+
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -10,42 +12,45 @@ import {
 } from '@/components/ui/table';
 import { DatasetBanner } from '@/features/shared/components/dataset-banner';
 import { KpiCard } from '@/features/shared/components/kpi-card';
-import { marketKpis, recentDeals } from '@/constants/mock-uzex';
+import { useMarketDashboard } from '@/features/market/hooks/use-market-dashboard';
 import { formatInt, formatMln } from '@/lib/uzex-format';
 
 function statusVariant(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
-  if (status.includes('Bekor') || status.includes('kechik')) return 'destructive';
-  if (status.includes('To‘liq') || status.includes('To‘langan')) return 'default';
+  if (/bekor|kechik|аннул|отмен|cancel/i.test(status)) return 'destructive';
+  if (/to‘liq|to'liq|to‘langan|to'langan|исполн|paid|выполнен/i.test(status)) return 'default';
   return 'secondary';
 }
 
 export function DealsView() {
+  const { data } = useMarketDashboard();
+  const { kpis, recentDeals, datasetNote } = data;
+
   return (
     <div className='flex flex-1 flex-col gap-4'>
-      <DatasetBanner />
+      <DatasetBanner note={datasetNote} />
       <div className='grid grid-cols-1 gap-4 md:grid-cols-4'>
-        <KpiCard label='Jami bitimlar' value={formatInt(marketKpis.totalDeals)} hint='Unikal ID' />
+        <KpiCard label='Jami bitimlar' value={formatInt(kpis.totalDeals)} hint='Unikal deal_no' />
         <KpiCard
           label='Bekor qilingan'
-          value={formatInt(marketKpis.cancelledDeals)}
-          hint='Risk monitoring'
+          value={formatInt(kpis.cancelledDeals)}
+          hint='Status: Аннулирован'
         />
         <KpiCard
           label='Qisman bajarilgan'
-          value={formatInt(marketKpis.partialDeals)}
-          hint='O‘rtacha ~60.9% yetkazilgan'
+          value={formatInt(kpis.partialDeals)}
+          hint={`O‘rtacha ~${kpis.avgDeliveredPct}% yetkazilgan`}
         />
         <KpiCard
           label='Kechikish'
-          value={formatInt(marketKpis.delayedDeals)}
-          hint={`${marketKpis.delayRatePct}% muddat buzilishi`}
+          value={formatInt(kpis.delayedDeals)}
+          hint={`${kpis.delayRatePct}% muddat buzilishi`}
         />
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Bitimlar va shartnomalar</CardTitle>
-          <CardDescription>So‘nggi namuna bitimlar</CardDescription>
+          <CardDescription>So‘nggi bitimlar (Postgres)</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>

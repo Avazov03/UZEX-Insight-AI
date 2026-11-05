@@ -1,6 +1,7 @@
 import { requireAuth } from '@/lib/auth-guard';
 import { LocalizedPageContainer } from '@/components/i18n/localized-page-container';
 import { DealsView } from '@/features/deals/components/deals-view';
+import { MarketDashboardBoundary } from '@/features/market/components/market-dashboard-boundary';
 
 export const metadata = { title: 'Deals & Contracts' };
 
@@ -9,7 +10,9 @@ export default async function Page() {
 
   return (
     <LocalizedPageContainer titleKey='pages.deals.title' descriptionKey='pages.deals.description'>
-      <DealsView />
+      <MarketDashboardBoundary>
+        <DealsView />
+      </MarketDashboardBoundary>
     </LocalizedPageContainer>
   );
 }

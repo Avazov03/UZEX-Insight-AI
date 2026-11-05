@@ -50,7 +50,7 @@ export const en: MessageTree = {
     demoAnalyst: 'Demo Analyst',
     noAccess: 'You do not have access to this page.',
     datasetNote:
-      'Synthetic test dataset (2022–30.10.2026). Results are not real UZEX market statistics.'
+      'Computed from the PostgreSQL UZEX test dataset. Not live/confidential exchange statistics.'
   },
   auth: {
     signInTitle: 'Sign in to UZEX Insight AI',
@@ -127,7 +127,7 @@ export const en: MessageTree = {
     agriShare: 'Agriculture share',
     agriHint: 'Largest category by value',
     ytdValue: '2026 YTD value',
-    ytdHint: '+21.1% vs same period 2025',
+    ytdHint: '2026 YTD vs full year 2025 (see trend on card)',
     contracts: 'Contracts',
     contractsHint: 'Active trade chain',
     byCategory: 'Value by category',
@@ -174,7 +174,7 @@ export const en: MessageTree = {
     cancelled: 'Cancelled',
     riskMonitor: 'Risk monitoring',
     partial: 'Partially fulfilled',
-    partialHint: 'Avg delivered ~60.9%',
+    partialHint: 'Average delivered share from DB',
     delay: 'Delay',
     delayHint: '{pct}% deadline breach',
     tableTitle: 'Deals & contracts',
@@ -223,7 +223,7 @@ export const en: MessageTree = {
     cancelled: 'Cancelled',
     cancelledHint: 'Check by broker / product',
     partial: 'Partially fulfilled',
-    partialHint: 'Avg delivered ~60.9%'
+    partialHint: 'Average delivered share from DB'
   },
   ai: {
     conversations: 'Conversations',

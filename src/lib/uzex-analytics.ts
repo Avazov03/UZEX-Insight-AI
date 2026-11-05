@@ -42,22 +42,35 @@ export async function getMarketOverview() {
 export async function analyzeProductPrices(productHint: string, year?: number) {
   const y = year ?? 2026;
   const hint = normalizeProductHint(productHint);
+  // Unit price as mln so'm / ton (normalize kg → ton)
+  const unitMlnTon = `
+    (amount / NULLIF(quantity * lot, 0))
+    * CASE
+        WHEN unit ILIKE '%килограмм%' OR unit ILIKE '%кг%' OR lower(unit) IN ('kg', 'килограмм')
+          THEN 1000
+        ELSE 1
+      END
+    / 1000000
+  `;
+
   const rows = await query<{
     region: string;
     deals: string;
     avg_unit_price: string;
+    avg_unit_price_mln_ton: string;
     total_amount: string;
   }>(
     `
     SELECT region,
            COUNT(*)::text AS deals,
            ROUND(AVG(amount / NULLIF(quantity * lot, 0))::numeric, 2)::text AS avg_unit_price,
+           ROUND(AVG(${unitMlnTon})::numeric, 2)::text AS avg_unit_price_mln_ton,
            COALESCE(SUM(amount),0)::text AS total_amount
     FROM deals
     WHERE EXTRACT(YEAR FROM deal_date) = $1
       AND product_name ILIKE '%' || $2 || '%'
     GROUP BY region
-    ORDER BY AVG(amount / NULLIF(quantity * lot, 0)) DESC NULLS LAST
+    ORDER BY AVG(${unitMlnTon}) DESC NULLS LAST
     LIMIT 15
     `,
     [y, hint]
@@ -66,11 +79,13 @@ export async function analyzeProductPrices(productHint: string, year?: number) {
   const [summary] = await query<{
     deals: string;
     avg_unit_price: string;
+    avg_unit_price_mln_ton: string;
     total_amount: string;
   }>(
     `
     SELECT COUNT(*)::text AS deals,
            ROUND(AVG(amount / NULLIF(quantity * lot, 0))::numeric, 2)::text AS avg_unit_price,
+           ROUND(AVG(${unitMlnTon})::numeric, 2)::text AS avg_unit_price_mln_ton,
            COALESCE(SUM(amount),0)::text AS total_amount
     FROM deals
     WHERE EXTRACT(YEAR FROM deal_date) = $1
@@ -79,7 +94,14 @@ export async function analyzeProductPrices(productHint: string, year?: number) {
     [y, hint]
   );
 
-  return { year: y, productHint: hint, originalHint: productHint, summary, byRegion: rows };
+  return {
+    year: y,
+    productHint: hint,
+    originalHint: productHint,
+    unit: 'mln_soum_per_ton',
+    summary,
+    byRegion: rows
+  };
 }
 
 export async function detectDeliveryRisk() {
@@ -121,16 +143,27 @@ export async function detectDeliveryRisk() {
 
 export async function compareYears(productHint: string, yearA = 2025, yearB = 2026) {
   const hint = normalizeProductHint(productHint);
+  const unitMlnTon = `
+    (amount / NULLIF(quantity * lot, 0))
+    * CASE
+        WHEN unit ILIKE '%килограмм%' OR unit ILIKE '%кг%' OR lower(unit) IN ('kg', 'килограмм')
+          THEN 1000
+        ELSE 1
+      END
+    / 1000000
+  `;
   const rows = await query<{
     year: string;
     deals: string;
     avg_unit_price: string;
+    avg_unit_price_mln_ton: string;
     total_amount: string;
   }>(
     `
     SELECT EXTRACT(YEAR FROM deal_date)::int::text AS year,
            COUNT(*)::text AS deals,
            ROUND(AVG(amount / NULLIF(quantity * lot, 0))::numeric, 2)::text AS avg_unit_price,
+           ROUND(AVG(${unitMlnTon})::numeric, 2)::text AS avg_unit_price_mln_ton,
            COALESCE(SUM(amount),0)::text AS total_amount
     FROM deals
     WHERE EXTRACT(YEAR FROM deal_date) IN ($1, $2)
@@ -140,5 +173,10 @@ export async function compareYears(productHint: string, yearA = 2025, yearB = 20
     `,
     [yearA, yearB, hint]
   );
-  return { productHint: hint, originalHint: productHint, years: rows };
+  return {
+    productHint: hint,
+    originalHint: productHint,
+    unit: 'mln_soum_per_ton',
+    years: rows
+  };
 }

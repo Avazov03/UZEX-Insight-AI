@@ -10,7 +10,7 @@ import {
   ChartTooltip,
   ChartTooltipContent
 } from '@/components/ui/chart';
-import { categoryShare } from '@/constants/mock-uzex';
+import { useMarketDashboard } from '@/features/market/hooks/use-market-dashboard';
 import { useI18n } from '@/i18n';
 
 const chartConfig = {
@@ -35,7 +35,8 @@ const colors = [
 
 export function PieGraph() {
   const { t } = useI18n();
-  const data = categoryShare.map((c, i) => ({
+  const { data } = useMarketDashboard();
+  const chartData = data.categoryShare.map((c, i) => ({
     name: c.name,
     value: c.value,
     fill: colors[i % colors.length]
@@ -51,8 +52,8 @@ export function PieGraph() {
         <ChartContainer config={chartConfig} className='mx-auto aspect-square max-h-[250px]'>
           <PieChart>
             <ChartTooltip content={<ChartTooltipContent nameKey='name' />} />
-            <Pie data={data} dataKey='value' nameKey='name' innerRadius={50}>
-              {data.map((entry) => (
+            <Pie data={chartData} dataKey='value' nameKey='name' innerRadius={50}>
+              {chartData.map((entry) => (
                 <Cell key={entry.name} fill={entry.fill} />
               ))}
             </Pie>
