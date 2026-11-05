@@ -126,7 +126,6 @@ export function LiveAiChat() {
   const [hydrated, setHydrated] = useState(false);
   const [deepAnalysis, setDeepAnalysis] = useState(false);
   const [showQuickPrompts, setShowQuickPrompts] = useState(false);
-  const [composerFocused, setComposerFocused] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const activeIdRef = useRef(activeId);
@@ -369,28 +368,21 @@ export function LiveAiChat() {
   }
 
   const canSend = Boolean(input.trim()) && !loading;
-  const composerExpanded = composerFocused || input.trim().length > 0 || !isEmpty;
 
   const composer = (
     <div
       className={cn(
-        'bg-muted/80 dark:bg-muted/50 w-full border border-black/5 shadow-lg backdrop-blur-md transition-all duration-300 ease-out dark:border-white/10',
-        isEmpty ? 'max-w-2xl' : 'max-w-3xl',
-        composerExpanded ? 'rounded-[1.75rem] p-3 sm:p-3.5' : 'rounded-full px-2 py-1.5 sm:px-2.5'
+        'bg-muted/90 w-full rounded-[1.75rem] border border-black/5 p-3 shadow-lg dark:border-white/10 dark:bg-muted/60',
+        'focus-within:ring-ring/20 focus-within:ring-2'
       )}
     >
       <Textarea
         ref={textareaRef}
         value={input}
         onChange={(e) => setInput(e.target.value)}
-        onFocus={() => setComposerFocused(true)}
-        onBlur={() => setComposerFocused(false)}
         placeholder={t('ai.askMarket')}
         rows={1}
-        className={cn(
-          'max-h-48 min-h-11 w-full resize-none border-0 bg-transparent px-2.5 py-2.5 text-[15px] leading-relaxed shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent',
-          composerExpanded ? 'min-h-16' : 'min-h-11'
-        )}
+        className='max-h-48 min-h-12 w-full resize-none border-0 bg-transparent px-2 py-2 text-[15px] leading-relaxed shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent'
         data-testid='ai-chat-input'
         aria-label={t('ai.askMarket')}
         onKeyDown={(e) => {
@@ -401,30 +393,18 @@ export function LiveAiChat() {
         }}
       />
 
-      <div
-        className={cn(
-          'flex items-center gap-2 px-0.5',
-          composerExpanded ? 'mt-1 justify-between pt-1' : 'justify-between'
-        )}
-      >
-        <div className='flex min-w-0 items-center gap-1.5'>
-          <Button
-            type='button'
-            variant='ghost'
-            size='icon-sm'
-            className='text-muted-foreground hover:text-foreground size-8 shrink-0 rounded-full'
-            aria-label={t('ai.composerPlus')}
-            aria-expanded={showQuickPrompts}
-            onClick={() => setShowQuickPrompts((v) => !v)}
-          >
-            <Icons.add className='size-4' />
-          </Button>
-          {composerExpanded ? (
-            <p className='text-muted-foreground hidden truncate text-[11px] sm:block'>
-              {t('ai.enterHint')}
-            </p>
-          ) : null}
-        </div>
+      <div className='mt-1 flex items-center justify-between gap-2 px-0.5'>
+        <Button
+          type='button'
+          variant='ghost'
+          size='icon-sm'
+          className='text-muted-foreground hover:text-foreground size-8 shrink-0 rounded-full'
+          aria-label={t('ai.composerPlus')}
+          aria-expanded={showQuickPrompts}
+          onClick={() => setShowQuickPrompts((v) => !v)}
+        >
+          <Icons.add className='size-4' />
+        </Button>
 
         <div className='flex shrink-0 items-center gap-1.5'>
           <button
@@ -436,7 +416,7 @@ export function LiveAiChat() {
               'inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium transition-colors',
               deepAnalysis
                 ? 'border-primary/40 bg-primary/10 text-primary'
-                : 'border-border/70 text-muted-foreground hover:bg-muted hover:text-foreground'
+                : 'border-border/70 text-muted-foreground hover:bg-background/60 hover:text-foreground'
             )}
           >
             <Icons.sparkles className='size-3.5' />
@@ -448,7 +428,7 @@ export function LiveAiChat() {
             size='icon-sm'
             className={cn(
               'size-9 rounded-full shadow-sm transition-opacity',
-              canSend ? 'opacity-100' : 'opacity-45'
+              canSend ? 'opacity-100' : 'opacity-40'
             )}
             disabled={!canSend}
             onClick={() => void send(input)}
@@ -465,6 +445,27 @@ export function LiveAiChat() {
     </div>
   );
 
+  const quickPrompts = (isEmpty || showQuickPrompts) && (
+    <div
+      className='flex w-full max-w-3xl flex-wrap justify-center gap-2'
+      data-testid='ai-suggested-prompts'
+    >
+      {suggestedPrompts.map((prompt) => (
+        <button
+          key={prompt}
+          type='button'
+          className='hover:bg-muted rounded-full bg-muted/40 px-3.5 py-2 text-left text-xs transition-colors'
+          onClick={() => {
+            setShowQuickPrompts(false);
+            void send(prompt);
+          }}
+        >
+          {prompt}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <div
       className='relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden'
@@ -472,88 +473,61 @@ export function LiveAiChat() {
       data-hydrated={hydrated ? 'true' : 'false'}
       data-empty={isEmpty ? 'true' : 'false'}
     >
-      <div
-        className={cn(
-          'mx-auto flex w-full max-w-3xl flex-1 flex-col px-3 transition-[justify-content,gap] duration-500 ease-out sm:px-4',
-          isEmpty ? 'justify-center gap-6 pb-8' : 'justify-end gap-0 pb-3'
-        )}
-      >
-        {!isEmpty ? (
-          <div
-            ref={scrollRef}
-            className='min-h-0 flex-1 space-y-6 overflow-y-auto py-6'
-          >
-            {items.map((item) => (
-              <div key={item.id} className='w-full'>
-                {item.role === 'user' ? (
-                  <div className='flex justify-end'>
-                    <div className='bg-muted max-w-[min(100%,34rem)] rounded-3xl px-4 py-2.5 text-[15px] leading-relaxed'>
-                      <span className='whitespace-pre-wrap'>{item.text}</span>
+      {/* Only messages scroll — composer stays docked */}
+      <div ref={scrollRef} className='min-h-0 flex-1 overflow-y-auto'>
+        <div className='mx-auto w-full max-w-3xl px-3 sm:px-4'>
+          {isEmpty ? (
+            <div className='flex min-h-[min(52vh,26rem)] flex-col items-center justify-center gap-3 py-8 text-center'>
+              <p className='text-foreground text-3xl font-medium tracking-tight sm:text-4xl'>
+                {t('ai.startPrompt')}
+              </p>
+              <p className='text-muted-foreground text-sm'>{t('ai.askHint')}</p>
+            </div>
+          ) : (
+            <div className='space-y-6 py-6'>
+              {items.map((item) => (
+                <div key={item.id} className='w-full'>
+                  {item.role === 'user' ? (
+                    <div className='flex justify-end'>
+                      <div className='bg-muted max-w-[min(100%,34rem)] rounded-3xl px-4 py-2.5 text-[15px] leading-relaxed'>
+                        <span className='whitespace-pre-wrap'>{item.text}</span>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className='w-full space-y-2'>
-                    {item.pending && !item.text ? (
-                      <ThinkingLoader
-                        label={
-                          item.tools?.length ? t('ai.searching') : t('ai.thinking')
-                        }
-                        tools={item.tools}
-                      />
-                    ) : (
-                      <FormattedReply text={item.text} />
-                    )}
-                    {!item.pending && item.tools?.length ? (
-                      <p className='text-muted-foreground flex items-center gap-1.5 text-[11px]'>
-                        <Icons.chartBar className='size-3' />
-                        {t('ai.tools')}:{' '}
-                        {item.tools.map((tool) => toolLabel(tool.name, t)).join(', ')}
-                      </p>
-                    ) : null}
-                  </div>
-                )}
-              </div>
-            ))}
-            {error ? (
-              <p className='text-destructive text-center text-sm'>{error}</p>
-            ) : null}
-          </div>
-        ) : (
-          <div className='space-y-3 text-center'>
-            <p className='text-foreground text-3xl font-medium tracking-tight sm:text-4xl'>
-              {t('ai.startPrompt')}
-            </p>
-            <p className='text-muted-foreground text-sm'>{t('ai.askHint')}</p>
-          </div>
-        )}
-
-        <div
-          className={cn(
-            'flex w-full flex-col items-center gap-3 transition-all duration-500 ease-out',
-            isEmpty ? '' : 'pt-2'
-          )}
-        >
-          {composer}
-          {(isEmpty || showQuickPrompts) && (
-            <div
-              className='flex max-w-2xl flex-wrap justify-center gap-2'
-              data-testid='ai-suggested-prompts'
-            >
-              {suggestedPrompts.map((prompt) => (
-                <button
-                  key={prompt}
-                  type='button'
-                  className='hover:bg-muted rounded-full bg-muted/40 px-3.5 py-2 text-left text-xs transition-colors'
-                  onClick={() => {
-                    setShowQuickPrompts(false);
-                    void send(prompt);
-                  }}
-                >
-                  {prompt}
-                </button>
+                  ) : (
+                    <div className='w-full space-y-2'>
+                      {item.pending && !item.text ? (
+                        <ThinkingLoader
+                          label={
+                            item.tools?.length ? t('ai.searching') : t('ai.thinking')
+                          }
+                          tools={item.tools}
+                        />
+                      ) : (
+                        <FormattedReply text={item.text} />
+                      )}
+                      {!item.pending && item.tools?.length ? (
+                        <p className='text-muted-foreground flex items-center gap-1.5 text-[11px]'>
+                          <Icons.chartBar className='size-3' />
+                          {t('ai.tools')}:{' '}
+                          {item.tools.map((tool) => toolLabel(tool.name, t)).join(', ')}
+                        </p>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
               ))}
+              {error ? (
+                <p className='text-destructive text-center text-sm'>{error}</p>
+              ) : null}
             </div>
           )}
+        </div>
+      </div>
+
+      <div className='bg-background/85 shrink-0 border-t border-transparent backdrop-blur-md'>
+        <div className='mx-auto flex w-full max-w-3xl flex-col items-center gap-3 px-3 pt-2 pb-3 sm:px-4'>
+          {quickPrompts}
+          {composer}
           {!isEmpty && !showQuickPrompts ? (
             <p className='text-muted-foreground text-center text-[11px]'>{t('ai.scopeHint')}</p>
           ) : null}
