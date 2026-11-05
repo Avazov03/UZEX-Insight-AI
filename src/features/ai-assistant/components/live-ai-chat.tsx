@@ -425,7 +425,7 @@ export function LiveAiChat() {
             {items.map((item) => (
               <div key={item.id} className='w-full'>
                 {item.role === 'user' ? (
-                  <div className='flex justify-center'>
+                  <div className='flex justify-end'>
                     <div className='bg-muted max-w-[min(100%,34rem)] rounded-3xl px-4 py-2.5 text-[15px] leading-relaxed'>
                       <span className='whitespace-pre-wrap'>{item.text}</span>
                     </div>
