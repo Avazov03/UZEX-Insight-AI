@@ -458,8 +458,11 @@ export function LiveAiChat() {
           </div>
         </div>
       ) : (
-        <>
-          <div ref={scrollRef} className='min-h-0 flex-1 overflow-y-auto'>
+        <div className='flex min-h-0 flex-1 flex-col overflow-hidden'>
+          <div
+            ref={scrollRef}
+            className='min-h-0 flex-1 overflow-y-auto overscroll-contain'
+          >
             <div className='mx-auto w-full max-w-3xl space-y-6 px-3 py-6 sm:px-4'>
               {items.map((item) => (
                 <div key={item.id} className='w-full'>
@@ -498,7 +501,7 @@ export function LiveAiChat() {
             </div>
           </div>
 
-          <div className='bg-background/85 shrink-0 backdrop-blur-md'>
+          <div className='bg-background shrink-0'>
             <div className='mx-auto w-full max-w-3xl px-3 pt-2 pb-3 sm:px-4'>
               {composer}
               <p className='text-muted-foreground mt-2 text-center text-[11px]'>
@@ -506,7 +509,7 @@ export function LiveAiChat() {
               </p>
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
