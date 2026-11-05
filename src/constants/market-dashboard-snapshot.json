@@ -1,0 +1,873 @@
+{
+  "source": "snapshot",
+  "datasetNote": "PostgreSQL UZEX test datasetidan bir marta hisoblangan snapshot (diagrammalar). AI chat jonli DB orqali ishlaydi.",
+  "kpis": {
+    "totalValueTrn": 206.84,
+    "totalDeals": 500000,
+    "contracts": 6616,
+    "participants": 14392,
+    "brokers": 120,
+    "delayedDeals": 13536,
+    "delayRatePct": 2.71,
+    "cancelledDeals": 33719,
+    "partialDeals": 22648,
+    "yoyValueGrowthPct": -8.4,
+    "avgDeliveredPct": 60.9
+  },
+  "yearlyVolume": [
+    {
+      "year": "2022",
+      "deals": 84299,
+      "valueTrn": 27.32
+    },
+    {
+      "year": "2023",
+      "deals": 93985,
+      "valueTrn": 34.26
+    },
+    {
+      "year": "2024",
+      "deals": 106647,
+      "valueTrn": 43.28
+    },
+    {
+      "year": "2025",
+      "deals": 115763,
+      "valueTrn": 53.24
+    },
+    {
+      "year": "2026*",
+      "deals": 99306,
+      "valueTrn": 48.74
+    }
+  ],
+  "monthlyTrend": [
+    {
+      "month": "Yan",
+      "deals": 6734,
+      "valueTrn": 2.97
+    },
+    {
+      "month": "Okt",
+      "deals": 18333,
+      "valueTrn": 10.22
+    },
+    {
+      "month": "Fev",
+      "deals": 6457,
+      "valueTrn": 2.76
+    },
+    {
+      "month": "Mar",
+      "deals": 7241,
+      "valueTrn": 3.04
+    },
+    {
+      "month": "Apr",
+      "deals": 7494,
+      "valueTrn": 2.99
+    },
+    {
+      "month": "May",
+      "deals": 7540,
+      "valueTrn": 3.18
+    },
+    {
+      "month": "Iyn",
+      "deals": 8578,
+      "valueTrn": 4.03
+    },
+    {
+      "month": "Iyl",
+      "deals": 10146,
+      "valueTrn": 5.16
+    },
+    {
+      "month": "Avg",
+      "deals": 10415,
+      "valueTrn": 5.36
+    },
+    {
+      "month": "Sen",
+      "deals": 16368,
+      "valueTrn": 9.03
+    }
+  ],
+  "categoryShare": [
+    {
+      "name": "Сельскохозяйственная продукция",
+      "amountTrn": 110.52,
+      "value": 53.43
+    },
+    {
+      "name": "Продовольственные товары",
+      "amountTrn": 30.4,
+      "value": 14.7
+    },
+    {
+      "name": "Нефтепродукты",
+      "amountTrn": 25.05,
+      "value": 12.11
+    },
+    {
+      "name": "Полимерная продукция",
+      "amountTrn": 15.11,
+      "value": 7.31
+    },
+    {
+      "name": "Металлопродукция",
+      "amountTrn": 11.31,
+      "value": 5.47
+    },
+    {
+      "name": "Химическая продукция",
+      "amountTrn": 7.69,
+      "value": 3.72
+    },
+    {
+      "name": "Строительные материалы",
+      "amountTrn": 6.62,
+      "value": 3.2
+    },
+    {
+      "name": "Промышленные товары",
+      "amountTrn": 0.14,
+      "value": 0.07
+    }
+  ],
+  "dealStatusShare": [
+    {
+      "status": "Исполнен",
+      "count": 431061
+    },
+    {
+      "status": "Аннулирован(Не оплачен)",
+      "count": 33719
+    },
+    {
+      "status": "Исполнен(Частично)",
+      "count": 22648
+    },
+    {
+      "status": "Оплачен",
+      "count": 5854
+    },
+    {
+      "status": "Заключен",
+      "count": 3954
+    },
+    {
+      "status": "Ждёт оплату",
+      "count": 1714
+    },
+    {
+      "status": "Новый",
+      "count": 964
+    },
+    {
+      "status": "Не подписан",
+      "count": 86
+    }
+  ],
+  "topProducts": [
+    {
+      "name": "Сахар белый",
+      "category": "Продовольственные товары",
+      "deals": 11845,
+      "valueTrn": 5.86
+    },
+    {
+      "name": "Аммиачная селитра Марка Б",
+      "category": "Химическая продукция",
+      "deals": 8916,
+      "valueTrn": 3.02
+    },
+    {
+      "name": "Карбамид Марка Б",
+      "category": "Химическая продукция",
+      "deals": 7393,
+      "valueTrn": 2.51
+    },
+    {
+      "name": "Топливо дизельное Марка ДТ-Е-К5",
+      "category": "Нефтепродукты",
+      "deals": 7212,
+      "valueTrn": 2.62
+    },
+    {
+      "name": "Пшеница продовольственная Класс 4 класс",
+      "category": "Сельскохозяйственная продукция",
+      "deals": 5845,
+      "valueTrn": 6.26
+    },
+    {
+      "name": "БЕНЗИН АВТОМОБИЛЬНЫЙ Марка АИ-92",
+      "category": "Нефтепродукты",
+      "deals": 5016,
+      "valueTrn": 1.84
+    },
+    {
+      "name": "Топливо дизельное Марка ДТ-Л-К5",
+      "category": "Нефтепродукты",
+      "deals": 4555,
+      "valueTrn": 1.45
+    },
+    {
+      "name": "Пшеница Класс III класс",
+      "category": "Сельскохозяйственная продукция",
+      "deals": 4437,
+      "valueTrn": 4.41
+    },
+    {
+      "name": "Пшеница продовольственная Класс 3 класс",
+      "category": "Сельскохозяйственная продукция",
+      "deals": 4433,
+      "valueTrn": 5.22
+    },
+    {
+      "name": "Дизельное топливо Марка ДТ-Е-К5",
+      "category": "Нефтепродукты",
+      "deals": 4188,
+      "valueTrn": 1.52
+    },
+    {
+      "name": "Топливо дизельное Марка ДТ-З-К5",
+      "category": "Нефтепродукты",
+      "deals": 3969,
+      "valueTrn": 1.57
+    },
+    {
+      "name": "Поливинилхлорид Марка SG-5 Тип суспензионный",
+      "category": "Полимерная продукция",
+      "deals": 3951,
+      "valueTrn": 1.44
+    }
+  ],
+  "regionalPrices": [
+    {
+      "region": "Xorazm viloyati",
+      "product": "Paxta xomashyosi",
+      "deals": 5003,
+      "avgMln": 8.69
+    },
+    {
+      "region": "Farg‘ona viloyati",
+      "product": "Paxta xomashyosi",
+      "deals": 4717,
+      "avgMln": 8.66
+    },
+    {
+      "region": "Andijon viloyati",
+      "product": "Paxta xomashyosi",
+      "deals": 192,
+      "avgMln": 8.58
+    },
+    {
+      "region": "Toshkent shahri",
+      "product": "Paxta xomashyosi",
+      "deals": 22824,
+      "avgMln": 8.33
+    },
+    {
+      "region": "Toshkent viloyati",
+      "product": "Paxta xomashyosi",
+      "deals": 9420,
+      "avgMln": 8.31
+    },
+    {
+      "region": "Qoraqalpog‘iston Respublikasi",
+      "product": "Paxta xomashyosi",
+      "deals": 5741,
+      "avgMln": 8.2
+    },
+    {
+      "region": "Buxoro viloyati",
+      "product": "Paxta xomashyosi",
+      "deals": 19510,
+      "avgMln": 8.11
+    },
+    {
+      "region": "Navoiy viloyati",
+      "product": "Paxta xomashyosi",
+      "deals": 10184,
+      "avgMln": 8.02
+    },
+    {
+      "region": "Sirdaryo viloyati",
+      "product": "Paxta xomashyosi",
+      "deals": 13741,
+      "avgMln": 7.87
+    },
+    {
+      "region": "Surxondaryo viloyati",
+      "product": "Paxta xomashyosi",
+      "deals": 11783,
+      "avgMln": 7.83
+    }
+  ],
+  "priceSeries": [
+    {
+      "month": "2025-01",
+      "cotton": 8.12,
+      "wheat": 4.2,
+      "diesel": 12.75
+    },
+    {
+      "month": "2025-02",
+      "cotton": 7.96,
+      "wheat": 4.25,
+      "diesel": 12.36
+    },
+    {
+      "month": "2025-03",
+      "cotton": 8.17,
+      "wheat": 4.35,
+      "diesel": 12.2
+    },
+    {
+      "month": "2025-04",
+      "cotton": 8.24,
+      "wheat": 4.42,
+      "diesel": 12
+    },
+    {
+      "month": "2025-05",
+      "cotton": 8.37,
+      "wheat": 4.35,
+      "diesel": 11.89
+    },
+    {
+      "month": "2025-06",
+      "cotton": 8.95,
+      "wheat": 4.32,
+      "diesel": 12.79
+    },
+    {
+      "month": "2025-07",
+      "cotton": 8.95,
+      "wheat": 4.21,
+      "diesel": 12.69
+    },
+    {
+      "month": "2025-08",
+      "cotton": 8.94,
+      "wheat": 4.14,
+      "diesel": 13.08
+    },
+    {
+      "month": "2025-09",
+      "cotton": 9.21,
+      "wheat": 4.04,
+      "diesel": 14
+    },
+    {
+      "month": "2025-10",
+      "cotton": 9.34,
+      "wheat": 4.15,
+      "diesel": 14.31
+    },
+    {
+      "month": "2025-11",
+      "cotton": 9.32,
+      "wheat": 4.25,
+      "diesel": 14.2
+    },
+    {
+      "month": "2025-12",
+      "cotton": 9.3,
+      "wheat": 4.33,
+      "diesel": 14.33
+    },
+    {
+      "month": "2026-01",
+      "cotton": 9.1,
+      "wheat": 4.55,
+      "diesel": 14.18
+    },
+    {
+      "month": "2026-02",
+      "cotton": 9.07,
+      "wheat": 4.7,
+      "diesel": 13.97
+    },
+    {
+      "month": "2026-03",
+      "cotton": 9.3,
+      "wheat": 4.71,
+      "diesel": 13.98
+    },
+    {
+      "month": "2026-04",
+      "cotton": 9.37,
+      "wheat": 4.72,
+      "diesel": 13.63
+    },
+    {
+      "month": "2026-05",
+      "cotton": 9.77,
+      "wheat": 4.59,
+      "diesel": 13.65
+    },
+    {
+      "month": "2026-06",
+      "cotton": 9.78,
+      "wheat": 4.56,
+      "diesel": 13.77
+    },
+    {
+      "month": "2026-07",
+      "cotton": 9.93,
+      "wheat": 4.54,
+      "diesel": 13.89
+    },
+    {
+      "month": "2026-08",
+      "cotton": 10.01,
+      "wheat": 4.47,
+      "diesel": 14.51
+    },
+    {
+      "month": "2026-09",
+      "cotton": 10.25,
+      "wheat": 4.5,
+      "diesel": 14.77
+    },
+    {
+      "month": "2026-10",
+      "cotton": 10.13,
+      "wheat": 4.48,
+      "diesel": 14.89
+    }
+  ],
+  "priceKpis": {
+    "cottonAvgMln": 9.67,
+    "cottonYoyPct": 10.7,
+    "topRegion": "Xorazm viloyati",
+    "topRegionAvgMln": 8.69
+  },
+  "recentDeals": [
+    {
+      "id": "604956",
+      "product": "Хлопок-сырец (спот) Сорт I сорт Класс II класс",
+      "region": "Namangan viloyati",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 97.8
+    },
+    {
+      "id": "604955",
+      "product": "Хлопок-сырец (спот) Сорт третий сорт Класс 1-класс",
+      "region": "Toshkent shahri",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 214.7
+    },
+    {
+      "id": "604954",
+      "product": "Сжиженный углеводородный газ Марка ПБА",
+      "region": "Toshkent shahri",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 176
+    },
+    {
+      "id": "604953",
+      "product": "Пшеница продовольственная Класс 4-класс",
+      "region": "Farg‘ona viloyati",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 918
+    },
+    {
+      "id": "604952",
+      "product": "Сахар белый",
+      "region": "Andijon viloyati",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 253.1
+    },
+    {
+      "id": "604951",
+      "product": "Хлопок сырец (спот) Сорт 2 сорт Класс 2-класс",
+      "region": "Farg‘ona viloyati",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 1271.4
+    },
+    {
+      "id": "604950",
+      "product": "Гипс Марка Г-6",
+      "region": "Samarqand viloyati",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 99
+    },
+    {
+      "id": "604949",
+      "product": "Хлопок-сырец (форвард) Сорт 2 сорт Класс 2-класс",
+      "region": "Buxoro viloyati",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 105.9
+    },
+    {
+      "id": "604948",
+      "product": "Хлопок-сырец (спот) Сорт I сорт Класс 1 класс",
+      "region": "Namangan viloyati",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 389.7
+    },
+    {
+      "id": "604947",
+      "product": "Хлопок сырец (спот) Сорт 1-сорт Класс 2-класс",
+      "region": "Toshkent shahri",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 298.8
+    },
+    {
+      "id": "604946",
+      "product": "Хлопок-сырец (спот) Сорт 2 сорт Класс 2 класс",
+      "region": "Surxondaryo viloyati",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 250.9
+    },
+    {
+      "id": "604945",
+      "product": "Хлопок сырец (спот) Сорт 1 сорт Класс 2-класс",
+      "region": "Toshkent shahri",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 465.9
+    },
+    {
+      "id": "604944",
+      "product": "Соль поваренная пищевая Тип йодированная",
+      "region": "Buxoro viloyati",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 152.7
+    },
+    {
+      "id": "604943",
+      "product": "Кислота серная Тип техническая",
+      "region": "Andijon viloyati",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 76.4
+    },
+    {
+      "id": "604942",
+      "product": "Хлопок-сырец (спот) Сорт 2 сорт Класс 1 класс",
+      "region": "Surxondaryo viloyati",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 395.4
+    },
+    {
+      "id": "604941",
+      "product": "Карбамид Марка Б",
+      "region": "Qashqadaryo viloyati",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 228.3
+    },
+    {
+      "id": "604940",
+      "product": "Хлопок сырец (форвард) Сорт I сорт Класс II класс",
+      "region": "Toshkent shahri",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 373.8
+    },
+    {
+      "id": "604939",
+      "product": "Хлопок сырец (спот) Сорт первый сорт Класс II класс",
+      "region": "Buxoro viloyati",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 144.3
+    },
+    {
+      "id": "604938",
+      "product": "Хлопок-сырец (спот) Сорт I сорт Класс II класс",
+      "region": "Namangan viloyati",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 687.7
+    },
+    {
+      "id": "604937",
+      "product": "Пиломатериал обрезной Тип обрезные хвойных пород",
+      "region": "Sirdaryo viloyati",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 202.1
+    },
+    {
+      "id": "604936",
+      "product": "Хлопок сырец (спот) Сорт первый сорт Класс II класс",
+      "region": "Buxoro viloyati",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 804.6
+    },
+    {
+      "id": "604935",
+      "product": "Хлопок сырец (спот) Сорт первый сорт Класс II класс",
+      "region": "Buxoro viloyati",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 1425.2
+    },
+    {
+      "id": "604934",
+      "product": "Хлопок сырец (спот) Сорт 2 сорт Класс 2 класс",
+      "region": "Surxondaryo viloyati",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 444.3
+    },
+    {
+      "id": "604933",
+      "product": "Хлопок-сырец (спот) Сорт 2 сорт Класс 1-класс",
+      "region": "Buxoro viloyati",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 679.5
+    },
+    {
+      "id": "604932",
+      "product": "Хлопок сырец (спот) 2-сорта 1 класс",
+      "region": "Navoiy viloyati",
+      "status": "Новый",
+      "date": "2026-10-30",
+      "valueMln": 295.4
+    }
+  ],
+  "topParticipants": [
+    {
+      "name": "\"Mo‘jotat Klaster\" MChJ",
+      "role": "Sotuvchi",
+      "region": "Xorazm viloyati",
+      "deals": 6983,
+      "valueTrn": 7.79
+    },
+    {
+      "name": "\"Zoket Invest\" OK",
+      "role": "Xaridor",
+      "region": "Navoiy viloyati",
+      "deals": 10150,
+      "valueTrn": 5.89
+    },
+    {
+      "name": "SITO‘TOM TEKSTIL MCHJ",
+      "role": "Sotuvchi",
+      "region": "Sirdaryo viloyati",
+      "deals": 12147,
+      "valueTrn": 5.67
+    },
+    {
+      "name": "\"Nutunim Fermer\" MChJ",
+      "role": "Sotuvchi",
+      "region": "Buxoro viloyati",
+      "deals": 11988,
+      "valueTrn": 5.42
+    },
+    {
+      "name": "\"Boqo‘bo Klaster\" MChJ",
+      "role": "Sotuvchi",
+      "region": "Xorazm viloyati",
+      "deals": 5532,
+      "valueTrn": 5.31
+    },
+    {
+      "name": "\"ҲАРАЙЎМ КИМЁ\" МЧЖ",
+      "role": "Sotuvchi",
+      "region": "Qashqadaryo viloyati",
+      "deals": 10608,
+      "valueTrn": 4.6
+    },
+    {
+      "name": "\"Fo‘sor Qurilish\" MChJ",
+      "role": "Xaridor",
+      "region": "Toshkent shahri",
+      "deals": 7174,
+      "valueTrn": 3.04
+    },
+    {
+      "name": "\"Moto Group\" MChJ",
+      "role": "Xaridor",
+      "region": "Surxondaryo viloyati",
+      "deals": 3763,
+      "valueTrn": 1.66
+    },
+    {
+      "name": "HO‘CHAL GROUP MCHJ",
+      "role": "Xaridor",
+      "region": "Xorazm viloyati",
+      "deals": 2735,
+      "valueTrn": 1.51
+    },
+    {
+      "name": "\"Qasi Invest\" MChJ",
+      "role": "Xaridor",
+      "region": "Toshkent shahri",
+      "deals": 3267,
+      "valueTrn": 1.43
+    }
+  ],
+  "topSeller": {
+    "name": "\"Mo‘jotat Klaster\" MChJ",
+    "deals": 6983,
+    "valueTrn": 7.79
+  },
+  "topBuyer": {
+    "name": "\"Zoket Invest\" OK",
+    "deals": 10150,
+    "valueTrn": 5.89
+  },
+  "brokerStats": [
+    {
+      "name": "\"Gucham Broker\" MChJ",
+      "deals": 21471,
+      "cancelled": 1462,
+      "delayPct": 4.4,
+      "sharePct": 4.3
+    },
+    {
+      "name": "KAZEHI BROKER MCHJ",
+      "deals": 18911,
+      "cancelled": 1155,
+      "delayPct": 8.1,
+      "sharePct": 3.8
+    },
+    {
+      "name": "\"Somot Broker\" MChJ",
+      "deals": 14139,
+      "cancelled": 993,
+      "delayPct": 1.7,
+      "sharePct": 2.8
+    },
+    {
+      "name": "\"Shofin Broker\" MChJ",
+      "deals": 14055,
+      "cancelled": 966,
+      "delayPct": 2.3,
+      "sharePct": 2.8
+    },
+    {
+      "name": "\"Kuxon Broker\" MChJ",
+      "deals": 13843,
+      "cancelled": 964,
+      "delayPct": 1,
+      "sharePct": 2.8
+    },
+    {
+      "name": "NAXON BROKER AJ",
+      "deals": 13145,
+      "cancelled": 986,
+      "delayPct": 1,
+      "sharePct": 2.6
+    },
+    {
+      "name": "\"Bifiyek Broker\" AJ",
+      "deals": 11997,
+      "cancelled": 832,
+      "delayPct": 1.3,
+      "sharePct": 2.4
+    },
+    {
+      "name": "KEFI BROKER AJ",
+      "deals": 11873,
+      "cancelled": 803,
+      "delayPct": 5.1,
+      "sharePct": 2.4
+    },
+    {
+      "name": "PASUR BROKER MCHJ",
+      "deals": 11381,
+      "cancelled": 733,
+      "delayPct": 4,
+      "sharePct": 2.3
+    },
+    {
+      "name": "RUQOM BROKER MCHJ",
+      "deals": 11014,
+      "cancelled": 715,
+      "delayPct": 6.2,
+      "sharePct": 2.2
+    }
+  ],
+  "productKpis": {
+    "distinctProducts": 697,
+    "topCategory": "Сельскохозяйственная продукция",
+    "topCategorySharePct": 53.43
+  },
+  "riskAlerts": [
+    {
+      "id": "R-01",
+      "title": "Yetkazib berish kechikishi",
+      "detail": "13 536 bitim (~2.71%) — delivery_date payment_date+30 kundan keyin",
+      "severity": "high",
+      "category": "Yetkazib berish"
+    },
+    {
+      "id": "R-02",
+      "title": "Bekor qilingan bitimlar",
+      "detail": "33 719 bitim statusida «Аннулирован»",
+      "severity": "high",
+      "category": "Status"
+    },
+    {
+      "id": "R-03",
+      "title": "Qisman bajarilish",
+      "detail": "22 648 bitim · o‘rtacha yetkazilgan ~60.9%",
+      "severity": "medium",
+      "category": "Ijro"
+    },
+    {
+      "id": "R-04",
+      "title": "Broker konsentratsiya",
+      "detail": "\"Gucham Broker\" MChJ: 21 471 bitim, bekor 1 462",
+      "severity": "medium",
+      "category": "Broker"
+    }
+  ],
+  "reports": [
+    {
+      "id": "REP-01",
+      "title": "Bozor umumiy holati",
+      "period": "2022–2026",
+      "type": "Market"
+    },
+    {
+      "id": "REP-02",
+      "title": "Mahsulot narx intelligence",
+      "period": "2025–2026",
+      "type": "Price"
+    },
+    {
+      "id": "REP-03",
+      "title": "Yetkazib berish riski",
+      "period": "Joriy dataset",
+      "type": "Risk"
+    },
+    {
+      "id": "REP-04",
+      "title": "Broker performance",
+      "period": "Joriy dataset",
+      "type": "Broker"
+    }
+  ],
+  "agriSharePct": 53.43,
+  "ytdValueTrn": 48.74,
+  "brokerHighlights": {
+    "highestCancelName": "\"Gucham Broker\" MChJ",
+    "highestCancelCount": 1462,
+    "lowestDelayName": "KEFUNUL BROKER MCHJ",
+    "lowestDelayPct": 0.2
+  }
+}

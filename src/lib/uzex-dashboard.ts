@@ -1,3 +1,4 @@
+import snapshot from '@/constants/market-dashboard-snapshot.json';
 import { query } from '@/lib/db';
 import { detectDeliveryRisk, getMarketOverview } from '@/lib/uzex-analytics';
 
@@ -47,7 +48,7 @@ function avg(arr: number[]): number {
 }
 
 export type MarketDashboard = {
-  source: 'postgres';
+  source: 'postgres' | 'snapshot';
   datasetNote: string;
   kpis: {
     totalValueTrn: number;
@@ -157,35 +158,19 @@ const MONTH_UZ = [
   'Dek'
 ];
 
-/** Static imported dataset → short TTL cache is safe and avoids re-scanning 500k rows. */
-const DASHBOARD_CACHE_TTL_MS = 10 * 60 * 1000;
-
-let dashboardCache: { expiresAt: number; data: MarketDashboard } | null = null;
-let dashboardInflight: Promise<MarketDashboard> | null = null;
-
+/**
+ * Chart/KPI pages read the frozen real-data snapshot (no Postgres).
+ * AI chat does NOT use this — it queries via uzex-analytics tools.
+ */
 export async function getMarketDashboard(): Promise<MarketDashboard> {
-  const now = Date.now();
-  if (dashboardCache && dashboardCache.expiresAt > now) {
-    return dashboardCache.data;
-  }
-  if (dashboardInflight) return dashboardInflight;
-
-  dashboardInflight = loadMarketDashboard()
-    .then((data) => {
-      dashboardCache = {
-        data,
-        expiresAt: Date.now() + DASHBOARD_CACHE_TTL_MS
-      };
-      return data;
-    })
-    .finally(() => {
-      dashboardInflight = null;
-    });
-
-  return dashboardInflight;
+  return snapshot as MarketDashboard;
 }
 
-async function loadMarketDashboard(): Promise<MarketDashboard> {
+/**
+ * Rebuild aggregates from Postgres. Use only to refresh
+ * `src/constants/market-dashboard-snapshot.json` — not at request time.
+ */
+export async function rebuildMarketDashboardFromDb(): Promise<MarketDashboard> {
   const [
     overview,
     risk,

@@ -1,9 +1,12 @@
 'use server';
 
-import { getMarketDashboard } from '@/lib/uzex-dashboard';
+import snapshot from '@/constants/market-dashboard-snapshot.json';
 import type { MarketDashboard } from './types';
 
-/** Server-only data access — swap here if backend moves off Postgres. */
+/**
+ * Diagram/KPI pages use a frozen snapshot of the real Postgres aggregates.
+ * AI chat keeps querying Postgres via uzex-analytics — do not wire it here.
+ */
 export async function fetchMarketDashboard(): Promise<MarketDashboard> {
-  return getMarketDashboard();
+  return snapshot as MarketDashboard;
 }

@@ -1,18 +1,16 @@
 import { NextResponse } from 'next/server';
-import { getMarketDashboard } from '@/lib/uzex-dashboard';
+import { fetchMarketDashboard } from '@/features/market/api/service';
 
 export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const data = await getMarketDashboard();
+    const data = await fetchMarketDashboard();
     return NextResponse.json(
       { ok: true, data },
       {
         headers: {
-          // Browser/CDN may reuse briefly; server also has 10m in-memory TTL
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400'
         }
       }
     );
