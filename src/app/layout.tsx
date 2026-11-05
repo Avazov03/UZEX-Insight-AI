@@ -33,12 +33,13 @@ export const metadata: Metadata = {
       'AI-powered commodity market intelligence platform for UZEX exchange analytics, pricing, and risk.',
     siteName: 'UZEX Insight AI',
     type: 'website',
+    url: '/',
     images: [
       {
-        url: '/shadcn-dashboard.png',
-        width: 3200,
-        height: 1600,
-        alt: 'UZEX Insight AI'
+        url: '/og.png',
+        width: 1200,
+        height: 630,
+        alt: 'UZEX Insight AI — commodity market intelligence'
       }
     ]
   },
@@ -47,7 +48,7 @@ export const metadata: Metadata = {
     title: 'UZEX Insight AI',
     description:
       'AI-powered commodity market intelligence platform for UZEX exchange analytics, pricing, and risk.',
-    images: ['/shadcn-dashboard.png']
+    images: ['/og.png']
   }
 };
 
