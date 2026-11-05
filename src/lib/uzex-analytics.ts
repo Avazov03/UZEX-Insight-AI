@@ -1,7 +1,15 @@
 import { query } from '@/lib/db';
 import { normalizeProductHint } from '@/lib/product-hint';
+import {
+  AMOUNT_UZS_SQL,
+  DATASET_SNAPSHOT_DATE,
+  DEALS_WITH_FX_FROM,
+  DELIVERY_LATE_ACTUAL_SQL,
+  DELIVERY_OVERDUE_OPEN_SQL,
+  MONEY_METHODOLOGY
+} from '@/lib/uzex-money';
 
-export { normalizeProductHint };
+export { normalizeProductHint, DATASET_SNAPSHOT_DATE, MONEY_METHODOLOGY };
 
 export async function getMarketOverview() {
   const [totals] = await query<{
@@ -9,14 +17,24 @@ export async function getMarketOverview() {
     contracts: string;
     participants: string;
     brokers: string;
-    amount_sum: string;
+    amount_sum_uzs: string;
+    amount_sum_raw_mixed: string;
+    usd_deals: string;
+    uzs_deals: string;
   }>(`
     SELECT
       (SELECT COUNT(*)::text FROM deals) AS deals,
       (SELECT COUNT(*)::text FROM contracts) AS contracts,
       (SELECT COUNT(*)::text FROM participants) AS participants,
       (SELECT COUNT(*)::text FROM brokers) AS brokers,
-      (SELECT COALESCE(SUM(amount),0)::text FROM deals) AS amount_sum
+      (SELECT COALESCE(SUM(${AMOUNT_UZS_SQL}),0)::text ${DEALS_WITH_FX_FROM}) AS amount_sum_uzs,
+      (SELECT COALESCE(SUM(amount),0)::text FROM deals) AS amount_sum_raw_mixed,
+      (SELECT COUNT(*)::text ${DEALS_WITH_FX_FROM}
+        WHERE c.currency LIKE '%США%' OR c.currency LIKE '%оллар%' OR lower(COALESCE(c.currency,'')) LIKE '%usd%') AS usd_deals,
+      (SELECT COUNT(*)::text ${DEALS_WITH_FX_FROM}
+        WHERE c.currency IS NULL OR NOT (
+          c.currency LIKE '%США%' OR c.currency LIKE '%оллар%' OR lower(COALESCE(c.currency,'')) LIKE '%usd%'
+        )) AS uzs_deals
   `);
 
   const byStatus = await query<{ status: string; count: string }>(`
@@ -26,17 +44,88 @@ export async function getMarketOverview() {
     ORDER BY COUNT(*) DESC
   `);
 
-  const byYear = await query<{ year: string; deals: string; amount: string }>(`
-    SELECT EXTRACT(YEAR FROM deal_date)::int::text AS year,
+  const byCategory = await query<{
+    category: string;
+    deals: string;
+    amount_uzs: string;
+  }>(`
+    SELECT COALESCE(NULLIF(c.category, ''), NULLIF(c.industry, ''), '—') AS category,
            COUNT(*)::text AS deals,
-           COALESCE(SUM(amount),0)::text AS amount
-    FROM deals
-    WHERE deal_date IS NOT NULL
+           COALESCE(SUM(${AMOUNT_UZS_SQL}),0)::text AS amount_uzs
+    ${DEALS_WITH_FX_FROM}
+    GROUP BY 1
+    ORDER BY SUM(${AMOUNT_UZS_SQL}) DESC NULLS LAST
+  `);
+
+  const byYear = await query<{ year: string; deals: string; amount_uzs: string }>(`
+    SELECT EXTRACT(YEAR FROM d.deal_date)::int::text AS year,
+           COUNT(*)::text AS deals,
+           COALESCE(SUM(${AMOUNT_UZS_SQL}),0)::text AS amount_uzs
+    ${DEALS_WITH_FX_FROM}
+    WHERE d.deal_date IS NOT NULL
     GROUP BY 1
     ORDER BY 1
   `);
 
-  return { totals, byStatus, byYear };
+  const byYearThroughOct30 = await query<{
+    year: string;
+    deals: string;
+    amount_uzs: string;
+  }>(`
+    SELECT EXTRACT(YEAR FROM d.deal_date)::int::text AS year,
+           COUNT(*)::text AS deals,
+           COALESCE(SUM(${AMOUNT_UZS_SQL}),0)::text AS amount_uzs
+    ${DEALS_WITH_FX_FROM}
+    WHERE d.deal_date IS NOT NULL
+      AND (
+        EXTRACT(MONTH FROM d.deal_date) < 10
+        OR (EXTRACT(MONTH FROM d.deal_date) = 10 AND EXTRACT(DAY FROM d.deal_date) <= 30)
+      )
+    GROUP BY 1
+    ORDER BY 1
+  `);
+
+  const amountUzs = Number(totals.amount_sum_uzs || 0);
+  const categories = byCategory.map((row) => {
+    const amount = Number(row.amount_uzs || 0);
+    return {
+      category: row.category,
+      deals: Number(row.deals),
+      amount_uzs: row.amount_uzs,
+      amount_trn_uzs: Math.round((amount / 1e12) * 100) / 100,
+      share_pct:
+        amountUzs > 0 ? Math.round((amount / amountUzs) * 10000) / 100 : 0
+    };
+  });
+
+  const y2025 = byYearThroughOct30.find((y) => y.year === '2025');
+  const y2026 = byYearThroughOct30.find((y) => y.year === '2026');
+  const a = Number(y2025?.amount_uzs || 0);
+  const b = Number(y2026?.amount_uzs || 0);
+  const yoySamePeriodPct = a > 0 ? Math.round(((b - a) / a) * 1000) / 10 : null;
+
+  return {
+    totals: {
+      ...totals,
+      amount_trn_uzs: Math.round((amountUzs / 1e12) * 1000) / 1000,
+      amount_sum: totals.amount_sum_uzs,
+      note: 'amount_sum / amount_sum_uzs are FX-normalized UZS. amount_sum_raw_mixed is unsafe (USD+UZS added raw).'
+    },
+    byStatus,
+    byCategory: categories,
+    byYear: byYear.map((y) => ({
+      ...y,
+      amount: y.amount_uzs,
+      amount_trn_uzs: Math.round((Number(y.amount_uzs) / 1e12) * 100) / 100,
+      partial_year: y.year === '2026'
+    })),
+    byYearThroughOct30: byYearThroughOct30.map((y) => ({
+      ...y,
+      amount_trn_uzs: Math.round((Number(y.amount_uzs) / 1e12) * 100) / 100
+    })),
+    yoySamePeriodPct,
+    methodology: MONEY_METHODOLOGY
+  };
 }
 
 export async function analyzeProductPrices(productHint: string, year?: number) {
@@ -106,21 +195,29 @@ export async function analyzeProductPrices(productHint: string, year?: number) {
 
 export async function detectDeliveryRisk() {
   const [summary] = await query<{
+    delayed_actual: string;
+    delayed_overdue_open: string;
     delayed: string;
     cancelled: string;
     partial: string;
     total: string;
+    with_both_dates: string;
   }>(`
     SELECT
-      COUNT(*) FILTER (
-        WHERE delivery_date IS NOT NULL
-          AND payment_date IS NOT NULL
-          AND delivery_date > payment_date + INTERVAL '30 days'
+      COUNT(*) FILTER (WHERE ${DELIVERY_LATE_ACTUAL_SQL})::text AS delayed_actual,
+      COUNT(*) FILTER (WHERE ${DELIVERY_OVERDUE_OPEN_SQL})::text AS delayed_overdue_open,
+      (
+        COUNT(*) FILTER (WHERE ${DELIVERY_LATE_ACTUAL_SQL})
+        + COUNT(*) FILTER (WHERE ${DELIVERY_OVERDUE_OPEN_SQL})
       )::text AS delayed,
-      COUNT(*) FILTER (WHERE status ILIKE '%Аннулирован%')::text AS cancelled,
-      COUNT(*) FILTER (WHERE status ILIKE '%Частично%')::text AS partial,
-      COUNT(*)::text AS total
-    FROM deals
+      COUNT(*) FILTER (WHERE d.status ILIKE '%Аннулирован%')::text AS cancelled,
+      COUNT(*) FILTER (WHERE d.status ILIKE '%Частично%')::text AS partial,
+      COUNT(*)::text AS total,
+      COUNT(*) FILTER (
+        WHERE d.payment_date IS NOT NULL AND d.delivery_date IS NOT NULL
+      )::text AS with_both_dates
+    FROM deals d
+    LEFT JOIN contracts c ON c.contract_no = d.contract_no
   `);
 
   const samples = await query<{
@@ -130,15 +227,90 @@ export async function detectDeliveryRisk() {
     status: string;
     delivery_date: string;
   }>(`
-    SELECT deal_no, product_name, region, status, delivery_date::text
-    FROM deals
-    WHERE status ILIKE '%Аннулирован%'
-       OR status ILIKE '%Частично%'
-    ORDER BY deal_date DESC NULLS LAST
+    SELECT d.deal_no, d.product_name, d.region, d.status, d.delivery_date::text
+    FROM deals d
+    LEFT JOIN contracts c ON c.contract_no = d.contract_no
+    WHERE ${DELIVERY_LATE_ACTUAL_SQL}
+       OR ${DELIVERY_OVERDUE_OPEN_SQL}
+       OR d.status ILIKE '%Аннулирован%'
+       OR d.status ILIKE '%Частично%'
+    ORDER BY d.deal_date DESC NULLS LAST
     LIMIT 10
   `);
 
-  return { summary, samples };
+  return {
+    summary: {
+      ...summary,
+      // Back-compat: delayed = late delivered + overdue open (README)
+      note: MONEY_METHODOLOGY.delivery
+    },
+    samples,
+    methodology: MONEY_METHODOLOGY
+  };
+}
+
+/** Region × category trade stats with FX-normalized UZS totals. */
+export async function analyzeRegionTrade(opts: {
+  year?: number;
+  categoryHint?: string;
+  limit?: number;
+}) {
+  const year = opts.year ?? 2024;
+  const limit = Math.min(Math.max(opts.limit ?? 20, 1), 50);
+  const hint = (opts.categoryHint || '').trim();
+  const agriDefault =
+    !hint || /qishloq|сельск|agri|agro|пахта|хлоп|пшениц/i.test(hint);
+
+  const categorySql = agriDefault
+    ? `(c.category ILIKE '%Сельск%' OR c.category ILIKE '%сельск%' OR c.industry ILIKE '%Сельск%')`
+    : `(c.category ILIKE '%' || $2 || '%' OR c.industry ILIKE '%' || $2 || '%' OR d.product_name ILIKE '%' || $2 || '%')`;
+
+  const params: Array<string | number> = [year];
+  if (!agriDefault) params.push(hint);
+  params.push(limit);
+  const limitParam = agriDefault ? '$2' : '$3';
+
+  const rows = await query<{
+    region: string;
+    deals: string;
+    amount_uzs: string;
+    quantity: string;
+  }>(
+    `
+    SELECT COALESCE(NULLIF(d.region, ''), '—') AS region,
+           COUNT(*)::text AS deals,
+           COALESCE(SUM(${AMOUNT_UZS_SQL}),0)::text AS amount_uzs,
+           COALESCE(SUM(d.quantity * COALESCE(d.lot, 1)),0)::text AS quantity
+    ${DEALS_WITH_FX_FROM}
+    WHERE EXTRACT(YEAR FROM d.deal_date) = $1
+      AND ${categorySql}
+    GROUP BY 1
+    ORDER BY SUM(${AMOUNT_UZS_SQL}) DESC NULLS LAST
+    LIMIT ${limitParam}
+    `,
+    params
+  );
+
+  const mapped = rows.map((r) => ({
+    region: r.region,
+    deals: Number(r.deals),
+    amount_uzs: r.amount_uzs,
+    amount_trn_uzs: Math.round((Number(r.amount_uzs) / 1e12) * 1000) / 1000,
+    quantity: r.quantity
+  }));
+
+  const top5 = mapped.slice(0, 5);
+  const bottom5 = mapped.length <= 5 ? mapped : mapped.slice(-5);
+
+  return {
+    year,
+    categoryHint: agriDefault ? 'Сельскохозяйственная продукция (default/match)' : hint,
+    unit: 'amount_uzs = FX-normalized so‘m; quantity = quantity*lot',
+    regions: mapped,
+    top5,
+    bottom5,
+    methodology: MONEY_METHODOLOGY
+  };
 }
 
 export async function compareYears(productHint: string, yearA = 2025, yearB = 2026) {
@@ -180,9 +352,6 @@ export async function compareYears(productHint: string, yearA = 2025, yearB = 20
     years: rows
   };
 }
-
-/** Dataset snapshot date from README (status meanings are as of this date). */
-export const DATASET_SNAPSHOT_DATE = '2026-10-30';
 
 function digitsOnly(value: string): string {
   return String(value ?? '').replace(/\D+/g, '');

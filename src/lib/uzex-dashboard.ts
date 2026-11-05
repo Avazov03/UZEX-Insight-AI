@@ -1,15 +1,21 @@
 import snapshot from '@/constants/market-dashboard-snapshot.json';
 import { query } from '@/lib/db';
 import { detectDeliveryRisk, getMarketOverview } from '@/lib/uzex-analytics';
+import {
+  AMOUNT_UZS_SQL,
+  DEALS_WITH_FX_FROM,
+  DELIVERY_LATE_ACTUAL_SQL,
+  MONEY_METHODOLOGY
+} from '@/lib/uzex-money';
 
 const SOUM_PER_TRN = 1_000_000_000_000;
 const SOUM_PER_MLN = 1_000_000;
 
-/** Normalize deal unit price to mln so'm per ton (kg → ×1000, then /1e6). */
+/** Unit price in mln so'm/ton using FX-normalized amount (kg → ton). */
 const UNIT_PRICE_MLN_TON_SQL = `
-  (amount / NULLIF(quantity * lot, 0))
+  (${AMOUNT_UZS_SQL} / NULLIF(d.quantity * d.lot, 0))
   * CASE
-      WHEN unit ILIKE '%килограмм%' OR unit ILIKE '%кг%' OR lower(unit) IN ('kg', 'килограмм')
+      WHEN d.unit ILIKE '%килограмм%' OR d.unit ILIKE '%кг%' OR lower(d.unit) IN ('kg', 'килограмм')
         THEN 1000
       ELSE 1
     END
@@ -17,19 +23,19 @@ const UNIT_PRICE_MLN_TON_SQL = `
 `;
 
 const COTTON_RAW_SQL = `(
-  product_name ILIKE '%Хлопок-сырец%'
-  OR product_name ILIKE '%Хлопок сырец%'
-  OR product_name ILIKE '%хлопок-сырец%'
-  OR product_name ILIKE '%хлопок сырец%'
+  d.product_name ILIKE '%Хлопок-сырец%'
+  OR d.product_name ILIKE '%Хлопок сырец%'
+  OR d.product_name ILIKE '%хлопок-сырец%'
+  OR d.product_name ILIKE '%хлопок сырец%'
 )`;
 
-const WHEAT_SQL = `(product_name ILIKE '%Пшениц%' OR product_name ILIKE '%пшениц%')`;
+const WHEAT_SQL = `(d.product_name ILIKE '%Пшениц%' OR d.product_name ILIKE '%пшениц%')`;
 
 const DIESEL_SQL = `(
-  product_name ILIKE '%дизел%'
-  OR product_name ILIKE '%Дизельн%'
-  OR product_name ILIKE '%дизельн%'
-  OR product_name ILIKE '%Топливо дизель%'
+  d.product_name ILIKE '%дизел%'
+  OR d.product_name ILIKE '%Дизельн%'
+  OR d.product_name ILIKE '%дизельн%'
+  OR d.product_name ILIKE '%Топливо дизель%'
 )`;
 
 function n(v: string | number | null | undefined): number {
@@ -192,31 +198,29 @@ export async function rebuildMarketDashboardFromDb(): Promise<MarketDashboard> {
       getMarketOverview(),
       detectDeliveryRisk(),
       query<{ m: string; deals: string; amount: string }>(`
-        SELECT EXTRACT(MONTH FROM deal_date)::int::text AS m,
+        SELECT EXTRACT(MONTH FROM d.deal_date)::int::text AS m,
                COUNT(*)::text AS deals,
-               COALESCE(SUM(amount),0)::text AS amount
-        FROM deals
-        WHERE EXTRACT(YEAR FROM deal_date) = 2026
+               COALESCE(SUM(${AMOUNT_UZS_SQL}),0)::text AS amount
+        ${DEALS_WITH_FX_FROM}
+        WHERE EXTRACT(YEAR FROM d.deal_date) = 2026
         GROUP BY 1
         ORDER BY 1
       `),
       query<{ name: string; deals: string; amount: string }>(`
         SELECT COALESCE(NULLIF(c.category, ''), NULLIF(c.industry, ''), 'Boshqa') AS name,
                COUNT(*)::text AS deals,
-               COALESCE(SUM(d.amount),0)::text AS amount
-        FROM deals d
-        LEFT JOIN contracts c ON c.contract_no = d.contract_no
+               COALESCE(SUM(${AMOUNT_UZS_SQL}),0)::text AS amount
+        ${DEALS_WITH_FX_FROM}
         GROUP BY 1
-        ORDER BY SUM(d.amount) DESC NULLS LAST
+        ORDER BY SUM(${AMOUNT_UZS_SQL}) DESC NULLS LAST
         LIMIT 10
       `),
       query<{ name: string; category: string; deals: string; amount: string }>(`
         SELECT d.product_name AS name,
                COALESCE(NULLIF(c.category, ''), NULLIF(c.industry, ''), '—') AS category,
                COUNT(*)::text AS deals,
-               COALESCE(SUM(d.amount),0)::text AS amount
-        FROM deals d
-        LEFT JOIN contracts c ON c.contract_no = d.contract_no
+               COALESCE(SUM(${AMOUNT_UZS_SQL}),0)::text AS amount
+        ${DEALS_WITH_FX_FROM}
         WHERE d.product_name IS NOT NULL AND d.product_name <> ''
         GROUP BY d.product_name, 2
         ORDER BY COUNT(*) DESC
@@ -228,24 +232,24 @@ export async function rebuildMarketDashboardFromDb(): Promise<MarketDashboard> {
         WHERE product_name IS NOT NULL AND product_name <> ''
       `),
       query<{ region: string; product: string; deals: string; avg_mln: string }>(`
-        SELECT region,
+        SELECT d.region,
                'Paxta xomashyosi' AS product,
                COUNT(*)::text AS deals,
                ROUND(AVG(${UNIT_PRICE_MLN_TON_SQL})::numeric, 2)::text AS avg_mln
-        FROM deals
+        ${DEALS_WITH_FX_FROM}
         WHERE ${COTTON_RAW_SQL}
-          AND region IS NOT NULL AND region <> ''
-        GROUP BY region
+          AND d.region IS NOT NULL AND d.region <> ''
+        GROUP BY d.region
         ORDER BY AVG(${UNIT_PRICE_MLN_TON_SQL}) DESC NULLS LAST
         LIMIT 10
       `),
       query<{ month: string; cotton: string; wheat: string; diesel: string }>(`
-        SELECT to_char(date_trunc('month', deal_date), 'YYYY-MM') AS month,
+        SELECT to_char(date_trunc('month', d.deal_date), 'YYYY-MM') AS month,
                ROUND(AVG(${UNIT_PRICE_MLN_TON_SQL}) FILTER (WHERE ${COTTON_RAW_SQL})::numeric, 2)::text AS cotton,
                ROUND(AVG(${UNIT_PRICE_MLN_TON_SQL}) FILTER (WHERE ${WHEAT_SQL})::numeric, 2)::text AS wheat,
                ROUND(AVG(${UNIT_PRICE_MLN_TON_SQL}) FILTER (WHERE ${DIESEL_SQL})::numeric, 2)::text AS diesel
-        FROM deals
-        WHERE deal_date >= DATE '2025-01-01'
+        ${DEALS_WITH_FX_FROM}
+        WHERE d.deal_date >= DATE '2025-01-01'
         GROUP BY 1
         ORDER BY 1
       `),
@@ -257,10 +261,11 @@ export async function rebuildMarketDashboardFromDb(): Promise<MarketDashboard> {
         deal_date: string;
         amount: string;
       }>(`
-        SELECT deal_no, product_name, region, status, deal_date::text, amount::text
-        FROM deals
-        WHERE deal_date IS NOT NULL
-        ORDER BY deal_date DESC, deal_no DESC
+        SELECT d.deal_no, d.product_name, d.region, d.status, d.deal_date::text,
+               (${AMOUNT_UZS_SQL})::text AS amount
+        ${DEALS_WITH_FX_FROM}
+        WHERE d.deal_date IS NOT NULL
+        ORDER BY d.deal_date DESC, d.deal_no DESC
         LIMIT 25
       `),
       query<{
@@ -275,11 +280,11 @@ export async function rebuildMarketDashboardFromDb(): Promise<MarketDashboard> {
                  'Sotuvchi' AS role,
                  COALESCE(p.region, '—') AS region,
                  COUNT(*)::text AS deals,
-                 COALESCE(SUM(d.amount),0)::text AS amount
-          FROM deals d
+                 COALESCE(SUM(${AMOUNT_UZS_SQL}),0)::text AS amount
+          ${DEALS_WITH_FX_FROM}
           JOIN participants p ON p.inn = d.seller_inn
           GROUP BY p.name, p.region
-          ORDER BY SUM(d.amount) DESC NULLS LAST
+          ORDER BY SUM(${AMOUNT_UZS_SQL}) DESC NULLS LAST
           LIMIT 5
         )
         UNION ALL
@@ -288,32 +293,32 @@ export async function rebuildMarketDashboardFromDb(): Promise<MarketDashboard> {
                  'Xaridor' AS role,
                  COALESCE(p.region, '—') AS region,
                  COUNT(*)::text AS deals,
-                 COALESCE(SUM(d.amount),0)::text AS amount
-          FROM deals d
+                 COALESCE(SUM(${AMOUNT_UZS_SQL}),0)::text AS amount
+          ${DEALS_WITH_FX_FROM}
           JOIN participants p ON p.inn = d.buyer_inn
           GROUP BY p.name, p.region
-          ORDER BY SUM(d.amount) DESC NULLS LAST
+          ORDER BY SUM(${AMOUNT_UZS_SQL}) DESC NULLS LAST
           LIMIT 5
         )
       `),
       query<{ name: string; deals: string; amount: string }>(`
         SELECT p.name,
                COUNT(*)::text AS deals,
-               COALESCE(SUM(d.amount),0)::text AS amount
-        FROM deals d
+               COALESCE(SUM(${AMOUNT_UZS_SQL}),0)::text AS amount
+        ${DEALS_WITH_FX_FROM}
         JOIN participants p ON p.inn = d.seller_inn
         GROUP BY p.name
-        ORDER BY SUM(d.amount) DESC NULLS LAST
+        ORDER BY SUM(${AMOUNT_UZS_SQL}) DESC NULLS LAST
         LIMIT 1
       `),
       query<{ name: string; deals: string; amount: string }>(`
         SELECT p.name,
                COUNT(*)::text AS deals,
-               COALESCE(SUM(d.amount),0)::text AS amount
-        FROM deals d
+               COALESCE(SUM(${AMOUNT_UZS_SQL}),0)::text AS amount
+        ${DEALS_WITH_FX_FROM}
         JOIN participants p ON p.inn = d.buyer_inn
         GROUP BY p.name
-        ORDER BY SUM(d.amount) DESC NULLS LAST
+        ORDER BY SUM(${AMOUNT_UZS_SQL}) DESC NULLS LAST
         LIMIT 1
       `),
       query<{
@@ -324,15 +329,12 @@ export async function rebuildMarketDashboardFromDb(): Promise<MarketDashboard> {
         total_deals: string;
       }>(`
         WITH broker_deals AS (
-          SELECT COALESCE(NULLIF(seller_broker, ''), NULLIF(buyer_broker, ''), '—') AS code,
+          SELECT COALESCE(NULLIF(d.seller_broker, ''), NULLIF(d.buyer_broker, ''), '—') AS code,
                  COUNT(*) AS deals,
-                 COUNT(*) FILTER (WHERE status ILIKE '%Аннулирован%') AS cancelled,
-                 COUNT(*) FILTER (
-                   WHERE delivery_date IS NOT NULL
-                     AND payment_date IS NOT NULL
-                     AND delivery_date > payment_date + INTERVAL '30 days'
-                 ) AS delayed
-          FROM deals
+                 COUNT(*) FILTER (WHERE d.status ILIKE '%Аннулирован%') AS cancelled,
+                 COUNT(*) FILTER (WHERE ${DELIVERY_LATE_ACTUAL_SQL}) AS delayed
+          FROM deals d
+          LEFT JOIN contracts c ON c.contract_no = d.contract_no
           GROUP BY 1
         ),
         totals AS (
@@ -357,15 +359,12 @@ export async function rebuildMarketDashboardFromDb(): Promise<MarketDashboard> {
         delayed: string;
       }>(`
         WITH broker_deals AS (
-          SELECT COALESCE(NULLIF(seller_broker, ''), NULLIF(buyer_broker, ''), '—') AS code,
+          SELECT COALESCE(NULLIF(d.seller_broker, ''), NULLIF(d.buyer_broker, ''), '—') AS code,
                  COUNT(*) AS deals,
-                 COUNT(*) FILTER (WHERE status ILIKE '%Аннулирован%') AS cancelled,
-                 COUNT(*) FILTER (
-                   WHERE delivery_date IS NOT NULL
-                     AND payment_date IS NOT NULL
-                     AND delivery_date > payment_date + INTERVAL '30 days'
-                 ) AS delayed
-          FROM deals
+                 COUNT(*) FILTER (WHERE d.status ILIKE '%Аннулирован%') AS cancelled,
+                 COUNT(*) FILTER (WHERE ${DELIVERY_LATE_ACTUAL_SQL}) AS delayed
+          FROM deals d
+          LEFT JOIN contracts c ON c.contract_no = d.contract_no
           GROUP BY 1
         )
         SELECT COALESCE(b.name, bd.code) AS name,
@@ -385,15 +384,12 @@ export async function rebuildMarketDashboardFromDb(): Promise<MarketDashboard> {
         delayed: string;
       }>(`
         WITH broker_deals AS (
-          SELECT COALESCE(NULLIF(seller_broker, ''), NULLIF(buyer_broker, ''), '—') AS code,
+          SELECT COALESCE(NULLIF(d.seller_broker, ''), NULLIF(d.buyer_broker, ''), '—') AS code,
                  COUNT(*) AS deals,
-                 COUNT(*) FILTER (WHERE status ILIKE '%Аннулирован%') AS cancelled,
-                 COUNT(*) FILTER (
-                   WHERE delivery_date IS NOT NULL
-                     AND payment_date IS NOT NULL
-                     AND delivery_date > payment_date + INTERVAL '30 days'
-                 ) AS delayed
-          FROM deals
+                 COUNT(*) FILTER (WHERE d.status ILIKE '%Аннулирован%') AS cancelled,
+                 COUNT(*) FILTER (WHERE ${DELIVERY_LATE_ACTUAL_SQL}) AS delayed
+          FROM deals d
+          LEFT JOIN contracts c ON c.contract_no = d.contract_no
           GROUP BY 1
         )
         SELECT COALESCE(b.name, bd.code) AS name,
@@ -422,20 +418,23 @@ export async function rebuildMarketDashboardFromDb(): Promise<MarketDashboard> {
     ]);
 
   const totalDeals = n(overview.totals.deals);
-  const amountSum = n(overview.totals.amount_sum);
+  const amountSum = n(overview.totals.amount_sum_uzs ?? overview.totals.amount_sum);
   const totalValueTrn = round(amountSum / SOUM_PER_TRN, 2);
 
   const byYear = overview.byYear.map((y) => ({
     year: y.year,
     deals: n(y.deals),
-    amount: n(y.amount)
+    amount: n(y.amount_uzs ?? y.amount)
   }));
   const y2025 = byYear.find((y) => y.year === '2025');
   const y2026 = byYear.find((y) => y.year === '2026');
+  // Prefer same-period (Jan–Oct 30) YoY — 2026 is partial
   const yoyValueGrowthPct =
-    y2025 && y2025.amount > 0
-      ? round((((y2026?.amount ?? 0) - y2025.amount) / y2025.amount) * 100, 1)
-      : 0;
+    overview.yoySamePeriodPct != null
+      ? round(overview.yoySamePeriodPct, 1)
+      : y2025 && y2025.amount > 0
+        ? round((((y2026?.amount ?? 0) - y2025.amount) / y2025.amount) * 100, 1)
+        : 0;
 
   const delayedDeals = n(risk.summary.delayed);
   const cancelledDeals = n(risk.summary.cancelled);
@@ -627,7 +626,7 @@ export async function rebuildMarketDashboardFromDb(): Promise<MarketDashboard> {
   return {
     source: 'postgres',
     datasetNote:
-      'PostgreSQL sunʼiy UZEX test datasetidan hisoblangan. Real birja yashirin statistikasi emas.',
+      `PostgreSQL sunʼiy UZEX datasetidan hisoblangan (snapshot ${MONEY_METHODOLOGY.snapshotDate}). USD→UZS kunlik kurs bilan. Real birja yashirin statistikasi emas.`,
     kpis: {
       totalValueTrn,
       totalDeals,

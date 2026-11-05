@@ -32,14 +32,14 @@ function BrandHeader({ state }: { state: string }) {
     <SidebarMenu>
       <SidebarMenuItem>
         <SidebarMenuButton size='lg' render={<a href='/dashboard/ai-assistant' />}>
-          <div className='relative size-[42px] shrink-0'>
+          <div className='relative size-[52px] shrink-0'>
             {/* eslint-disable-next-line @next/next/no-img-element -- SVG brand mark, avoid Image crop */}
             <img
-              src='/favicon.svg?v=4'
+              src='/favicon.svg?v=5'
               alt=''
-              width={42}
-              height={42}
-              className='size-[42px] rounded-[22%]'
+              width={52}
+              height={52}
+              className='size-[52px] rounded-[22%]'
               draggable={false}
             />
           </div>

@@ -4,6 +4,7 @@ import {
   analyzeDeadlineBreaches,
   analyzeProductPrices,
   compareYears,
+  analyzeRegionTrade,
   detectDeliveryRisk,
   getContractByNumber,
   getDealByNumber,
@@ -135,7 +136,7 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     function: {
       name: 'get_market_overview',
       description:
-        'REQUIRED for market condition / bozor holati / overview / KPI / total deals / total volume / status mix / yearly activity questions. Returns totals (deals, contracts, participants, brokers, amount_sum in so‘m), byStatus counts, byYear deals+amount.'
+        'REQUIRED for market condition / bozor holati / overview / KPI / categories / yearly activity. Returns FX-normalized amount_sum_uzs, byCategory (Категория товара), byStatus, byYear, byYearThroughOct30, yoySamePeriodPct, methodology.'
     }
   },
   {
@@ -159,8 +160,28 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
     type: 'function',
     function: {
+      name: 'analyze_region_trade',
+      description:
+        'Region breakdown for a year and product category (default: agriculture). FX-normalized UZS totals, deal counts, quantity. Use for hududlar / regional agri questions.',
+      parameters: {
+        type: 'object',
+        properties: {
+          year: { type: 'integer', description: 'e.g. 2024' },
+          categoryHint: {
+            type: 'string',
+            description: 'Category or product hint; empty/agri → Сельскохозяйственная'
+          },
+          limit: { type: 'integer', description: 'Max regions, default 20' }
+        }
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
       name: 'detect_delivery_risk',
-      description: 'Detect cancelled/partial deals and sample risky deals'
+      description:
+        'Delivery discipline via README: payment_date + delivery_days. Returns delayed_actual, delayed_overdue_open, cancelled, partial.'
     }
   },
   {
@@ -209,6 +230,12 @@ async function runTool(name: string, argsJson: string) {
       );
     case 'detect_delivery_risk':
       return detectDeliveryRisk();
+    case 'analyze_region_trade':
+      return analyzeRegionTrade({
+        year: args.year ? Number(args.year) : 2024,
+        categoryHint: args.categoryHint ? String(args.categoryHint) : undefined,
+        limit: args.limit ? Number(args.limit) : 20
+      });
     case 'compare_years':
       return compareYears(
         String(args.productHint ?? ''),
@@ -323,18 +350,21 @@ HARD SCOPE (do not break):
 
 NO HALLUCINATION (do not break):
 - Every number, name, INN, broker code, date, status, and product MUST come from a tool result (or prefetched JSON).
-- amount_sum is so‘m; report volume as trillion so‘m = amount_sum / 1e12 (round ~2 decimals).
+- Use amount_sum_uzs / amount_trn_uzs (FX-normalized). NEVER use amount_sum_raw_mixed as "total market volume".
+- Trillion so‘m = amount_uzs / 1e12 (≈2–3 decimals). Cite methodology briefly when giving totals.
+- Categories come from get_market_overview.byCategory — NEVER say categories are missing if that array is present.
+- Delivery late = detect_delivery_risk.summary.delayed_actual (+ overdue_open if relevant). Do not invent a flat "+30 days" rule.
+- 2026 is partial through 2026-10-30 — for growth use yoySamePeriodPct / byYearThroughOct30, not full-year 2026 vs 2025.
 - If tools return found:false / empty / no rows: say clearly that this is NOT in the dataset. Do not guess.
-- If the year/product/region is outside the data: say so. Do not invent prices or companies.
-- Prefer "ma'lumot yo'q / нет в данных / not in dataset" over a plausible-sounding answer.
-- Never present this as live real-time UZEX official stats — it is the provided synthetic/historical dataset (through ~2026-10-30). Say that briefly at the end of overview answers.
+- Never present this as live official UZEX stats — synthetic/historical dataset through ~2026-10-30.
 
 LOOKUP RULES:
 - Deal/lot number → get_deal_by_number FIRST. Never claim missing without that tool.
 - Contract number → get_contract_by_number.
 - Broker code (BK…) → lookup_broker. INN/company → lookup_participant.
 - Status meanings → get_status_glossary. Auctions → get_trade_type_stats. Deadline breaches → analyze_deadline_breaches.
-- Market condition / KPIs / totals / "bozor holati" → get_market_overview FIRST (required). Optionally detect_delivery_risk for a short risk takeaway. Product prices → analyze_product_prices. Year compare → compare_years.
+- Market condition / KPIs / categories / "bozor holati" → get_market_overview FIRST (required) + detect_delivery_risk for discipline.
+- Region × category (hududlar) → analyze_region_trade. Product prices → analyze_product_prices. Year compare → compare_years.
 
 COLUMN MAPPING (never confuse):
 - trade_type = Тип торгов (auction) — NOT product
@@ -348,7 +378,8 @@ DEADLINES / STATUS (README snapshot 2026-10-30):
 
 STYLE:
 - Concise, human, bullets for lists. No raw JSON. No code blocks unless the user asks how this product works and a tiny example is essential (almost never).
-- For market overview: 1 short intro → KPI bullets (deals, volume trn, key statuses from byStatus) → 1–2 sentence takeaway → dataset disclaimer.
+- For market overview: intro → KPIs (FX UZS) → byCategory top shares → statuses → delivery discipline → 3 problems / 3 positives when asked → same-period YoY → disclaimer + short methodology.
+- If user asks for diagrams/charts: give a clear markdown table from tool numbers and point to Dashboard → Bozor / Overview charts. Do NOT claim data is unavailable.
 ${dealHint ? `\nHINT: Latest message likely refers to deal_no=${dealHint} — use prefetched get_deal_by_number result.` : ''}
 ${
   isMarketOverviewIntent(message)
