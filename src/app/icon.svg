@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
-  <title id="title">UZEX UX favicon</title>
+  <title id="title">UZEX UX</title>
   <defs>
-    <linearGradient id="green" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="uzexGreen" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#12C968"/>
       <stop offset="1" stop-color="#00B84F"/>
     </linearGradient>
   </defs>
-  <rect x="0" y="0" width="512" height="512" rx="120" fill="url(#green)"/>
-  <g fill="#FFFFFF" transform="translate(-216 -40) scale(.333333)">
+  <rect width="512" height="512" rx="112" fill="url(#uzexGreen)"/>
+  <g
+    fill="#FFFFFF"
+    transform="translate(256 256) scale(0.30) translate(-768 -512.5)"
+  >
     <path d="M355 307 C355 282 373 266 399 266 L430 266 C456 266 473 284 473 309 L473 538 C473 615 531 670 612 670 C669 670 716 645 755 602 L797 554 C821 526 861 520 887 543 C913 566 911 602 888 628 L840 683 C782 749 707 796 613 796 C459 796 355 694 355 542 Z"/>
     <path d="M681 307 C663 307 649 319 649 337 C649 348 654 357 662 367 L785 516 C794 527 795 542 785 554 L742 604 C722 628 724 660 748 680 C772 700 806 696 828 672 L904 584 L1019 752 C1035 776 1057 791 1082 791 L1123 791 C1156 791 1177 764 1160 733 L1006 543 L1159 365 C1180 340 1166 307 1133 307 L1091 307 C1066 307 1046 319 1029 340 L907 482 L815 350 C797 321 775 307 747 307 Z"/>
   </g>
