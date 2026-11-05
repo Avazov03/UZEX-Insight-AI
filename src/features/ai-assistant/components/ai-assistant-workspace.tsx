@@ -26,6 +26,7 @@ import {
   suggestedPrompts,
   type DemoUIMessage
 } from '../chat';
+import { useI18n } from '@/i18n';
 
 type ToolPart = {
   type: string;
@@ -93,29 +94,30 @@ function ToolMarker({ part }: { part: ToolPart }) {
 }
 
 function ContextPanel() {
+  const { t } = useI18n();
   return (
     <aside className='bg-card hidden w-72 shrink-0 flex-col overflow-hidden rounded-xl border xl:flex'>
       <div className='border-b px-4 py-3'>
-        <p className='text-sm font-medium'>Analysis Context</p>
-        <p className='text-muted-foreground text-xs'>Joriy so‘rov filtrlari va manbalar</p>
+        <p className='text-sm font-medium'>{t('ai.context')}</p>
+        <p className='text-muted-foreground text-xs'>{t('ai.contextHint')}</p>
       </div>
       <ScrollArea className='flex-1'>
         <div className='space-y-4 p-4'>
           <div>
             <p className='text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase'>
-              Davr
+              {t('ai.period')}
             </p>
             <Badge variant='secondary'>2025–2026 YTD</Badge>
           </div>
           <div>
             <p className='text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase'>
-              Mahsulot
+              {t('ai.product')}
             </p>
             <Badge variant='outline'>Paxta xomashyosi</Badge>
           </div>
           <div>
             <p className='text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase'>
-              Tools
+              {t('ai.tools')}
             </p>
             <ul className='text-muted-foreground space-y-1.5 text-xs'>
               <li className='flex items-center gap-2'>
@@ -135,12 +137,9 @@ function ContextPanel() {
           <Separator />
           <div>
             <p className='text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase'>
-              Dataset
+              {t('ai.dataset')}
             </p>
-            <p className='text-xs leading-relaxed'>
-              500 000 bitim · 6 616 shartnoma · sunʼiy test maʼlumotlari (README). Natijalar real
-              UZEX bozor statistikasi emas.
-            </p>
+            <p className='text-xs leading-relaxed'>{t('ai.datasetBody')}</p>
           </div>
         </div>
       </ScrollArea>
@@ -149,6 +148,7 @@ function ContextPanel() {
 }
 
 export function AiAssistantWorkspace() {
+  const { t } = useI18n();
   const { messages, sendMessage, status, setMessages } = useChat<DemoUIMessage>({
     messages: initialMessages,
     // Demo transport from @shadcn/helpers; cast until AI SDK versions are aligned
@@ -163,8 +163,8 @@ export function AiAssistantWorkspace() {
       {/* Conversations */}
       <aside className='bg-card hidden w-56 shrink-0 flex-col overflow-hidden rounded-xl border lg:flex'>
         <div className='flex items-center justify-between border-b px-3 py-3'>
-          <p className='text-sm font-medium'>Suhbatlar</p>
-          <Button size='icon-sm' variant='ghost' aria-label='Yangi suhbat'>
+          <p className='text-sm font-medium'>{t('ai.conversations')}</p>
+          <Button size='icon-sm' variant='ghost' aria-label={t('ai.newChat')}>
             <Icons.add className='size-4' />
           </Button>
         </div>
@@ -194,10 +194,8 @@ export function AiAssistantWorkspace() {
             <Icons.sparkles className='size-4' />
           </div>
           <div className='min-w-0'>
-            <p className='text-sm font-medium'>UZEX Market Analyst</p>
-            <p className='text-muted-foreground text-xs'>
-              Scripted demo · SQL tools · manbali javob
-            </p>
+            <p className='text-sm font-medium'>{t('ai.analyst')}</p>
+            <p className='text-muted-foreground text-xs'>{t('ai.analystHint')}</p>
           </div>
           <Badge variant='outline' className='ml-auto capitalize'>
             {status}
@@ -212,13 +210,8 @@ export function AiAssistantWorkspace() {
                   <div className='text-muted-foreground flex flex-1 flex-col items-center justify-center gap-4 text-center text-sm'>
                     <Icons.sparkles className='text-primary size-10' />
                     <div className='max-w-md space-y-1'>
-                      <p className='text-foreground text-base font-medium'>
-                        Birja bozorini so‘rang
-                      </p>
-                      <p>
-                        Narxlar, hajm, risk va ishtirokchilar bo‘yicha tahlil. Demo uchun{' '}
-                        <span className='text-foreground font-medium'>Send</span> bosing.
-                      </p>
+                      <p className='text-foreground text-base font-medium'>{t('ai.askMarket')}</p>
+                      <p>{t('ai.askHint')}</p>
                     </div>
                     <div className='flex max-w-lg flex-wrap justify-center gap-2'>
                       {suggestedPrompts.map((prompt) => (
@@ -298,7 +291,7 @@ export function AiAssistantWorkspace() {
                       </MessageAvatar>
                       <MessageContent>
                         <Marker>
-                          <MarkerContent className='shimmer'>Tahlil qilinmoqda…</MarkerContent>
+                          <MarkerContent className='shimmer'>{t('ai.analyzing')}</MarkerContent>
                         </Marker>
                       </MessageContent>
                     </Message>
@@ -317,12 +310,12 @@ export function AiAssistantWorkspace() {
             onClick={() => setMessages(demoChat.get(0))}
             disabled={isBusy || messages.length === 0}
           >
-            Qayta boshlash
+            {t('ai.restart')}
           </Button>
           <LoadingButton
             className='ml-auto'
             loading={isBusy}
-            loadingLabel='Javob oqimi'
+            loadingLabel={t('ai.streaming')}
             disabled={!nextMessage}
             onClick={() => {
               if (nextMessage) void sendMessage(nextMessage);
@@ -330,10 +323,10 @@ export function AiAssistantWorkspace() {
           >
             {nextMessage ? (
               <>
-                <Icons.send className='size-4' /> Keyingi xabar
+                <Icons.send className='size-4' /> {t('ai.nextMessage')}
               </>
             ) : (
-              'Demo yakunlandi'
+              t('ai.demoEnded')
             )}
           </LoadingButton>
         </div>

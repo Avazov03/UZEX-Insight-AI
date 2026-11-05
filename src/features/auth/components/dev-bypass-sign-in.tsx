@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Icons } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
+import { LanguageSelector } from '@/components/i18n/language-selector';
+import { useI18n } from '@/i18n';
 
 /**
  * Temporary local sign-in: any email/password continues to the dashboard.
@@ -14,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
  */
 export function DevBypassSignIn() {
   const router = useRouter();
+  const { t } = useI18n();
   const [email, setEmail] = useState('analyst@uzex.local');
   const [password, setPassword] = useState('demo');
   const [loading, setLoading] = useState(false);
@@ -31,11 +34,14 @@ export function DevBypassSignIn() {
 
   return (
     <div className='bg-card w-full max-w-sm rounded-xl border p-6 shadow-sm'>
+      <div className='mb-4 flex justify-end'>
+        <LanguageSelector />
+      </div>
       <div className='mb-6 space-y-2 text-center'>
-        <h1 className='text-xl font-semibold tracking-tight'>Sign in to UZEX Insight AI</h1>
-        <p className='text-muted-foreground text-sm'>Welcome back! Please sign in to continue</p>
+        <h1 className='text-xl font-semibold tracking-tight'>{t('auth.signInTitle')}</h1>
+        <p className='text-muted-foreground text-sm'>{t('auth.welcomeBack')}</p>
         <Badge variant='outline' className='text-amber-600 dark:text-amber-400'>
-          Dev bypass · istalgan login ochadi
+          {t('auth.bypassBadge')}
         </Badge>
       </div>
 
@@ -47,37 +53,35 @@ export function DevBypassSignIn() {
         }}
       >
         <div className='space-y-2'>
-          <Label htmlFor='email'>Email address</Label>
+          <Label htmlFor='email'>{t('auth.email')}</Label>
           <Input
             id='email'
             type='email'
             autoComplete='email'
-            placeholder='Enter your email address'
+            placeholder={t('auth.emailPlaceholder')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
         <div className='space-y-2'>
-          <Label htmlFor='password'>Password</Label>
+          <Label htmlFor='password'>{t('auth.password')}</Label>
           <Input
             id='password'
             type='password'
             autoComplete='current-password'
-            placeholder='Anything works'
+            placeholder={t('auth.passwordPlaceholder')}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
         <Button type='submit' className='w-full' disabled={loading}>
           {loading ? <Icons.spinner className='size-4 animate-spin' /> : null}
-          Continue
+          {t('common.continue')}
           <Icons.arrowRight className='size-4' />
         </Button>
       </form>
 
-      <p className='text-muted-foreground mt-4 text-center text-xs'>
-        Keyinchalik Google / email orqali haqiqiy Clerk auth ulanadi.
-      </p>
+      <p className='text-muted-foreground mt-4 text-center text-xs'>{t('auth.bypassHint')}</p>
     </div>
   );
 }

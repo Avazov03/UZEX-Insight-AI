@@ -11,14 +11,15 @@ import {
   ChartTooltipContent
 } from '@/components/ui/chart';
 import { categoryShare } from '@/constants/mock-uzex';
+import { useI18n } from '@/i18n';
 
 const chartConfig = {
-  value: { label: 'Ulush %' },
-  agri: { label: 'Qishloq xo‘jaligi', color: 'var(--chart-1)' },
-  food: { label: 'Oziq-ovqat', color: 'var(--chart-2)' },
-  oil: { label: 'Neft mahsulotlari', color: 'var(--chart-3)' },
-  metal: { label: 'Metall', color: 'var(--chart-4)' },
-  other: { label: 'Boshqa', color: 'var(--chart-5)' }
+  value: { label: '%' },
+  agri: { label: 'Agri', color: 'var(--chart-1)' },
+  food: { label: 'Food', color: 'var(--chart-2)' },
+  oil: { label: 'Oil', color: 'var(--chart-3)' },
+  metal: { label: 'Metal', color: 'var(--chart-4)' },
+  other: { label: 'Other', color: 'var(--chart-5)' }
 } satisfies ChartConfig;
 
 const colors = [
@@ -33,6 +34,7 @@ const colors = [
 ];
 
 export function PieGraph() {
+  const { t } = useI18n();
   const data = categoryShare.map((c, i) => ({
     name: c.name,
     value: c.value,
@@ -42,8 +44,8 @@ export function PieGraph() {
   return (
     <Card className='flex flex-col'>
       <CardHeader>
-        <CardTitle>Kategoriya ulushi</CardTitle>
-        <CardDescription>Qiymat bo‘yicha taqsimot (%)</CardDescription>
+        <CardTitle>{t('overview.categoryShare')}</CardTitle>
+        <CardDescription>{t('overview.categoryDesc')}</CardDescription>
       </CardHeader>
       <CardContent className='flex-1'>
         <ChartContainer config={chartConfig} className='mx-auto aspect-square max-h-[250px]'>

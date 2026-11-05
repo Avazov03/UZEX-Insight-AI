@@ -20,39 +20,41 @@ import {
   ChartTooltip,
   ChartTooltipContent
 } from '@/components/ui/chart';
+import { useI18n } from '@/i18n';
 
 const chartConfig = {
-  value: { label: 'Ulush %', color: 'var(--chart-1)' }
+  value: { label: '%', color: 'var(--chart-1)' }
 } satisfies ChartConfig;
 
 export function MarketAnalyticsView() {
+  const { t } = useI18n();
   return (
     <div className='flex flex-1 flex-col gap-4'>
       <DatasetBanner />
       <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
         <KpiCard
-          label='Qishloq xo‘jaligi ulushi'
+          label={t('market.agriShare')}
           value='51.77%'
-          hint='Qiymat bo‘yicha eng katta kategoriya'
+          hint={t('market.agriHint')}
         />
         <KpiCard
-          label='2026 YTD qiymat'
+          label={t('market.ytdValue')}
           value={formatTrn(52.05)}
-          hint='2025 shu davrga nisbatan +21.1%'
+          hint={t('market.ytdHint')}
           trend={{ value: '+21.1%', up: true }}
         />
         <KpiCard
-          label='Shartnomalar'
+          label={t('market.contracts')}
           value={formatInt(marketKpis.contracts)}
-          hint='Faol savdo zanjiri'
+          hint={t('market.contractsHint')}
         />
       </div>
 
       <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
         <Card>
           <CardHeader>
-            <CardTitle>Kategoriyalar bo‘yicha qiymat</CardTitle>
-            <CardDescription>Ulush (%) va taxminiy trillion so‘m</CardDescription>
+            <CardTitle>{t('market.byCategory')}</CardTitle>
+            <CardDescription>{t('market.byCategoryDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className='aspect-auto h-[280px] w-full'>
@@ -80,15 +82,15 @@ export function MarketAnalyticsView() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Bitim holatlari</CardTitle>
-            <CardDescription>30.10.2026 holati</CardDescription>
+            <CardTitle>{t('market.dealStatuses')}</CardTitle>
+            <CardDescription>{t('market.asOf')}</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Holat</TableHead>
-                  <TableHead className='text-right'>Soni</TableHead>
+                  <TableHead>{t('market.status')}</TableHead>
+                  <TableHead className='text-right'>{t('market.count')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

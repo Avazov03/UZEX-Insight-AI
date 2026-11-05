@@ -22,10 +22,12 @@ import {
   useSidebar
 } from '@/components/ui/sidebar';
 import { useEffect } from 'react';
+import { useI18n } from '@/i18n';
 
 const DEV_BYPASS = process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS === 'true';
 
 function BrandHeader({ state }: { state: string }) {
+  const { t } = useI18n();
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -40,8 +42,8 @@ function BrandHeader({ state }: { state: string }) {
                 : 'visible max-w-full opacity-100'
             }`}
           >
-            <span className='truncate font-medium'>UZEX Insight AI</span>
-            <span className='text-muted-foreground truncate text-xs'>Market Intelligence</span>
+            <span className='truncate font-medium'>{t('brand.name')}</span>
+            <span className='text-muted-foreground truncate text-xs'>{t('brand.tagline')}</span>
           </div>
         </SidebarMenuButton>
       </SidebarMenuItem>

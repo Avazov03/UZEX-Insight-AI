@@ -11,26 +11,28 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Icons } from '@/components/icons';
 import { monthlyTrend2026 } from '@/constants/mock-uzex';
+import { useI18n } from '@/i18n';
 
 const chartConfig = {
   valueTrn: {
-    label: 'Qiymat (tn so‘m)',
+    label: 'Value',
     color: 'var(--chart-1)'
   }
 } satisfies ChartConfig;
 
 export function AreaGraph() {
+  const { t } = useI18n();
   return (
     <Card>
       <CardHeader>
         <CardTitle className='flex flex-wrap items-center gap-2'>
-          2026 savdo dinamikasi
+          {t('overview.trend2026')}
           <Badge variant='outline'>
             <Icons.trendingUp />
             YTD
           </Badge>
         </CardTitle>
-        <CardDescription>Yanvar — oktyabr, trillion so‘m</CardDescription>
+        <CardDescription>{t('overview.trendDesc')}</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className='aspect-auto h-[250px] w-full'>

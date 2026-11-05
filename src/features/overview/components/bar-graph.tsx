@@ -11,30 +11,32 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Icons } from '@/components/icons';
 import { yearlyVolume } from '@/constants/mock-uzex';
+import { useI18n } from '@/i18n';
 
 const chartConfig = {
   deals: {
-    label: 'Bitimlar',
+    label: 'Deals',
     color: 'var(--chart-1)'
   },
   valueTrn: {
-    label: 'Qiymat (tn)',
+    label: 'Value',
     color: 'var(--chart-2)'
   }
 } satisfies ChartConfig;
 
 export function BarGraph() {
+  const { t } = useI18n();
   return (
     <Card>
       <CardHeader>
         <CardTitle className='flex flex-wrap items-center gap-2'>
-          Yillik hajm
+          {t('overview.yearlyVolume')}
           <Badge variant='outline'>
             <Icons.chartBar />
             2022–2026
           </Badge>
         </CardTitle>
-        <CardDescription>Bitimlar soni va qiymat (trillion so‘m)</CardDescription>
+        <CardDescription>{t('overview.yearlyDesc')}</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className='aspect-auto h-[250px] w-full'>

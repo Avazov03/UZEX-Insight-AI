@@ -34,19 +34,21 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Icons } from '../icons';
 import { OrgSwitcher } from '../org-switcher';
+import { useI18n, type MessageKey } from '@/i18n';
 
 export default function AppSidebar() {
   const pathname = usePathname();
   const { user } = useUser();
   const { signOut } = useClerk();
   const router = useRouter();
+  const { t } = useI18n();
   const filteredGroups = useFilteredNavGroups(navGroups);
   const bypass = process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS === 'true';
   const displayUser = user
     ? user
     : bypass
       ? {
-          fullName: 'Demo Analyst',
+          fullName: t('common.demoAnalyst'),
           imageUrl: '',
           emailAddresses: [{ emailAddress: 'analyst@uzex.local' }]
         }
@@ -60,7 +62,9 @@ export default function AppSidebar() {
       <SidebarContent className='overflow-x-hidden'>
         {filteredGroups.map((group) => (
           <SidebarGroup key={group.label || 'ungrouped'} className='py-0'>
-            {group.label && <SidebarGroupLabel>{group.label}</SidebarGroupLabel>}
+            {group.label && (
+              <SidebarGroupLabel>{t(group.label as MessageKey)}</SidebarGroupLabel>
+            )}
             <SidebarMenu>
               {group.items.map((item) => (
                 <NavMainItem key={item.title} item={item} pathname={pathname} />
@@ -110,15 +114,15 @@ export default function AppSidebar() {
                 <DropdownMenuGroup>
                   <DropdownMenuItem onClick={() => router.push('/dashboard/profile')}>
                     <Icons.account className='mr-2 h-4 w-4' />
-                    Profile
+                    {t('nav.profile')}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push('/dashboard/ai-assistant')}>
                     <Icons.sparkles className='mr-2 h-4 w-4' />
-                    AI Assistant
+                    {t('nav.aiAssistant')}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push('/dashboard/notifications')}>
                     <Icons.notification className='mr-2 h-4 w-4' />
-                    Notifications
+                    {t('nav.notifications')}
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
@@ -133,7 +137,7 @@ export default function AppSidebar() {
                     }}
                   >
                     <Icons.logout aria-hidden className='mr-2 h-4 w-4' />
-                    Sign out
+                    {t('common.signOut')}
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
               </DropdownMenuContent>
@@ -152,19 +156,21 @@ function isActivePath(pathname: string, url: string) {
 
 function NavMainItem({ item, pathname }: { item: NavItem; pathname: string }) {
   const { state, isMobile } = useSidebar();
+  const { t } = useI18n();
   const Icon = item.icon ? Icons[item.icon] : Icons.logo;
   const children = item.items ?? [];
+  const label = t(item.title as MessageKey);
 
   if (children.length === 0) {
     return (
       <SidebarMenuItem>
         <SidebarMenuButton
-          render={<Link href={item.url} aria-label={item.title} />}
-          tooltip={item.title}
+          render={<Link href={item.url} aria-label={label} />}
+          tooltip={label}
           isActive={pathname === item.url}
         >
           <Icon />
-          <span>{item.title}</span>
+          <span>{label}</span>
         </SidebarMenuButton>
       </SidebarMenuItem>
     );
@@ -180,14 +186,14 @@ function NavMainItem({ item, pathname }: { item: NavItem; pathname: string }) {
           <DropdownMenuTrigger
             render={
               <SidebarMenuButton
-                tooltip={item.title}
+                tooltip={label}
                 isActive={hasActiveChild}
                 className='data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground'
               />
             }
           >
             <Icon />
-            <span>{item.title}</span>
+            <span>{label}</span>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             side='right'
@@ -196,27 +202,28 @@ function NavMainItem({ item, pathname }: { item: NavItem; pathname: string }) {
             className='w-auto min-w-48'
           >
             <DropdownMenuGroup>
-              <DropdownMenuLabel>{item.title}</DropdownMenuLabel>
+              <DropdownMenuLabel>{label}</DropdownMenuLabel>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               {children.map((child) => {
                 const ChildIcon = child.icon ? Icons[child.icon] : null;
                 const active = isActivePath(pathname, child.url);
+                const childLabel = t(child.title as MessageKey);
                 return (
                   <DropdownMenuItem
                     key={child.title}
                     render={
                       <Link
                         href={child.url}
-                        aria-label={child.title}
+                        aria-label={childLabel}
                         aria-current={active ? 'page' : undefined}
                       />
                     }
                     className={active ? 'bg-accent text-accent-foreground font-medium' : undefined}
                   >
                     {ChildIcon && <ChildIcon />}
-                    {child.title}
+                    {childLabel}
                   </DropdownMenuItem>
                 );
               })}
@@ -232,28 +239,31 @@ function NavMainItem({ item, pathname }: { item: NavItem; pathname: string }) {
       <CollapsibleTrigger
         render={
           <SidebarMenuButton
-            tooltip={item.title}
+            tooltip={label}
             isActive={pathname === item.url}
             className='group/collapsible'
           />
         }
       >
         {item.icon && <Icon />}
-        <span>{item.title}</span>
+        <span>{label}</span>
         <Icons.chevronRight className='ml-auto transition-transform duration-200 group-data-panel-open/collapsible:rotate-90' />
       </CollapsibleTrigger>
       <CollapsibleContent>
         <SidebarMenuSub>
-          {children.map((child) => (
-            <SidebarMenuSubItem key={child.title}>
-              <SidebarMenuSubButton
-                render={<Link href={child.url} aria-label={child.title} />}
-                isActive={pathname === child.url}
-              >
-                <span>{child.title}</span>
-              </SidebarMenuSubButton>
-            </SidebarMenuSubItem>
-          ))}
+          {children.map((child) => {
+            const childLabel = t(child.title as MessageKey);
+            return (
+              <SidebarMenuSubItem key={child.title}>
+                <SidebarMenuSubButton
+                  render={<Link href={child.url} aria-label={childLabel} />}
+                  isActive={pathname === child.url}
+                >
+                  <span>{childLabel}</span>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            );
+          })}
         </SidebarMenuSub>
       </CollapsibleContent>
     </Collapsible>

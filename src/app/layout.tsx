@@ -5,6 +5,7 @@ import { fontVariables } from '@/components/themes/font.config';
 import { DEFAULT_THEME, THEMES } from '@/components/themes/theme.config';
 import ThemeProvider from '@/components/themes/theme-provider';
 import { cn } from '@/lib/utils';
+import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale } from '@/i18n/config';
 import type { Metadata, Viewport } from 'next';
 import { cookies } from 'next/headers';
 import NextTopLoader from 'nextjs-toploader';
@@ -59,9 +60,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const activeThemeValue = cookieStore.get('active_theme')?.value;
   const isValidTheme = THEMES.some((t) => t.value === activeThemeValue);
   const themeToApply = isValidTheme ? activeThemeValue! : DEFAULT_THEME;
+  const localeCookie = cookieStore.get(LOCALE_COOKIE)?.value;
+  const initialLocale = isLocale(localeCookie) ? localeCookie : DEFAULT_LOCALE;
 
   return (
-    <html lang='en' suppressHydrationWarning data-theme={themeToApply}>
+    <html lang={initialLocale} suppressHydrationWarning data-theme={themeToApply}>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -92,7 +95,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           disableTransitionOnChange
           enableColorScheme
           >
-          <Providers activeThemeValue={themeToApply}>
+          <Providers activeThemeValue={themeToApply} initialLocale={initialLocale}>
           <Toaster />
           {children}
           </Providers>

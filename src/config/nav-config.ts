@@ -1,17 +1,15 @@
 import { NavGroup } from '@/types';
+import type { MessageKey } from '@/i18n';
 
 /**
- * UZEX Insight AI navigation
- *
- * AI Assistant is the primary workspace. Analytics modules support market
- * intelligence. Demo template routes are intentionally omitted from nav.
+ * UZEX Insight AI navigation — `title` holds i18n message keys.
  */
 export const navGroups: NavGroup[] = [
   {
-    label: 'Workspace',
+    label: 'nav.workspace' satisfies MessageKey as string,
     items: [
       {
-        title: 'AI Assistant',
+        title: 'nav.aiAssistant',
         url: '/dashboard/ai-assistant',
         icon: 'sparkles',
         isActive: false,
@@ -21,10 +19,10 @@ export const navGroups: NavGroup[] = [
     ]
   },
   {
-    label: 'Market Intelligence',
+    label: 'nav.marketIntelligence' satisfies MessageKey as string,
     items: [
       {
-        title: 'Overview',
+        title: 'nav.overview',
         url: '/dashboard/overview',
         icon: 'dashboard',
         isActive: false,
@@ -32,56 +30,56 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
-        title: 'Market Analytics',
+        title: 'nav.market',
         url: '/dashboard/market',
         icon: 'trendingUp',
         isActive: false,
         items: []
       },
       {
-        title: 'Price Intelligence',
+        title: 'nav.prices',
         url: '/dashboard/prices',
         icon: 'chartBar',
         isActive: false,
         items: []
       },
       {
-        title: 'Products',
+        title: 'nav.products',
         url: '/dashboard/products',
         icon: 'product',
         isActive: false,
         items: []
       },
       {
-        title: 'Deals & Contracts',
+        title: 'nav.deals',
         url: '/dashboard/deals',
         icon: 'fileContract',
         isActive: false,
         items: []
       },
       {
-        title: 'Participants',
+        title: 'nav.participants',
         url: '/dashboard/participants',
         icon: 'teams',
         isActive: false,
         items: []
       },
       {
-        title: 'Brokers',
+        title: 'nav.brokers',
         url: '/dashboard/brokers',
         icon: 'broker',
         isActive: false,
         items: []
       },
       {
-        title: 'Risk Intelligence',
+        title: 'nav.risk',
         url: '/dashboard/risk',
         icon: 'risk',
         isActive: false,
         items: []
       },
       {
-        title: 'Reports',
+        title: 'nav.reports',
         url: '/dashboard/reports',
         icon: 'report',
         isActive: false,
@@ -90,28 +88,28 @@ export const navGroups: NavGroup[] = [
     ]
   },
   {
-    label: 'System',
+    label: 'nav.system' satisfies MessageKey as string,
     items: [
       {
-        title: 'Account',
+        title: 'nav.account',
         url: '#',
         icon: 'account',
         isActive: true,
         items: [
           {
-            title: 'Profile',
+            title: 'nav.profile',
             url: '/dashboard/profile',
             icon: 'profile',
             shortcut: ['m', 'm']
           },
           {
-            title: 'Notifications',
+            title: 'nav.notifications',
             url: '/dashboard/notifications',
             icon: 'notification',
             shortcut: ['n', 'n']
           },
           {
-            title: 'Workspaces',
+            title: 'nav.workspaces',
             url: '/dashboard/workspaces',
             icon: 'workspace'
           }
