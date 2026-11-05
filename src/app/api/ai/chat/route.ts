@@ -134,7 +134,8 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'get_market_overview',
-      description: 'Get total deals, contracts, participants, brokers, amounts and yearly stats'
+      description:
+        'REQUIRED for market condition / bozor holati / overview / KPI / total deals / total volume / status mix / yearly activity questions. Returns totals (deals, contracts, participants, brokers, amount_sum in so‘m), byStatus counts, byYear deals+amount.'
     }
   },
   {
@@ -228,11 +229,20 @@ function extractDealNumberHint(message: string): string | null {
   return m?.[1] ?? null;
 }
 
+/** Broad market-condition / KPI questions → always answer with get_market_overview. */
+function isMarketOverviewIntent(message: string): boolean {
+  return /bozor\s*holat|holati\s*qanday|рынок.*(состоян|обзор|как)|market\s*(overview|condition|state|status)|umumiy\s*(tahlil|ko'?rsatkich|statistika)|jami\s*bitim|total\s*deal|savdo\s*hajm|объем\s*торг|kpi|dashboard\s*overview|bozor\s*(haqida|qanday)|как\s*(обстоит|обзор).*рынок|what.?s\s*(the\s*)?market/i.test(
+    message
+  );
+}
+
 /** Conservative gate: only block clearly non-UZEX requests. */
 function isClearlyOffTopic(message: string): boolean {
   const t = message.toLowerCase();
+  if (isMarketOverviewIntent(message)) return false;
+
   const uzexCue =
-    /uzex|бирж|bitim|sdelk|deal|kontrakt|shartnoma|broker|paxta|хлоп|пшениц|сахар|narx|цена|risk|yetkaz|постав|auction|аукцион|ishtirok|участник|inn|stir|bk\d{2,}|dashboard|bozor|рынок|insight/i.test(
+    /uzex|бирж|bitim|sdelk|deal|kontrakt|shartnoma|broker|paxta|хлоп|пшениц|сахар|narx|цена|risk|yetkaz|постав|auction|аукцион|ishtirok|участник|inn|stir|bk\d{2,}|dashboard|bozor|рынок|holat|обзор|insight/i.test(
       message
     );
   if (uzexCue) return false;
@@ -306,22 +316,25 @@ LANGUAGE (highest priority):
 
 HARD SCOPE (do not break):
 - ONLY: UZEX deals/contracts/products/prices/regions/brokers/participants/risk/deadlines/auction types/USD rates in THIS dataset, OR how to use this UZEX Insight AI dashboard.
-- REFUSE off-topic in 1–2 short sentences and redirect to UZEX market questions. Examples to refuse: programming/code, homework, politics, medicine, recipes, jokes, crypto trading advice, general knowledge.
+- IN SCOPE (NEVER refuse): "bozor holati", "рынок как", "market overview/condition", umumiy tahlil, jami bitimlar, savdo hajmi, status mix, yearly activity — these ARE core product questions. Answer with tools.
+- REFUSE only clearly unrelated topics in 1–2 short sentences: programming/code, homework, politics, medicine, recipes, jokes, crypto trading advice, general world knowledge.
 - Do NOT write code, essays, or tutorials for unrelated topics — even if the user insists.
+- Vague UZEX market questions are NOT off-topic. Call get_market_overview (and detect_delivery_risk if risk is implied) and give a short structured briefing.
 
 NO HALLUCINATION (do not break):
-- Every number, name, INN, broker code, date, status, and product MUST come from a tool result (or the prefetched deal JSON).
+- Every number, name, INN, broker code, date, status, and product MUST come from a tool result (or prefetched JSON).
+- amount_sum is so‘m; report volume as trillion so‘m = amount_sum / 1e12 (round ~2 decimals).
 - If tools return found:false / empty / no rows: say clearly that this is NOT in the dataset. Do not guess.
 - If the year/product/region is outside the data: say so. Do not invent prices or companies.
 - Prefer "ma'lumot yo'q / нет в данных / not in dataset" over a plausible-sounding answer.
-- Never fill gaps with world knowledge about real UZEX, gold prices, or future years.
+- Never present this as live real-time UZEX official stats — it is the provided synthetic/historical dataset (through ~2026-10-30). Say that briefly at the end of overview answers.
 
 LOOKUP RULES:
 - Deal/lot number → get_deal_by_number FIRST. Never claim missing without that tool.
 - Contract number → get_contract_by_number.
 - Broker code (BK…) → lookup_broker. INN/company → lookup_participant.
 - Status meanings → get_status_glossary. Auctions → get_trade_type_stats. Deadline breaches → analyze_deadline_breaches.
-- Totals/KPIs → get_market_overview. Product prices → analyze_product_prices. Year compare → compare_years.
+- Market condition / KPIs / totals / "bozor holati" → get_market_overview FIRST (required). Optionally detect_delivery_risk for a short risk takeaway. Product prices → analyze_product_prices. Year compare → compare_years.
 
 COLUMN MAPPING (never confuse):
 - trade_type = Тип торгов (auction) — NOT product
@@ -335,7 +348,13 @@ DEADLINES / STATUS (README snapshot 2026-10-30):
 
 STYLE:
 - Concise, human, bullets for lists. No raw JSON. No code blocks unless the user asks how this product works and a tiny example is essential (almost never).
+- For market overview: 1 short intro → KPI bullets (deals, volume trn, key statuses from byStatus) → 1–2 sentence takeaway → dataset disclaimer.
 ${dealHint ? `\nHINT: Latest message likely refers to deal_no=${dealHint} — use prefetched get_deal_by_number result.` : ''}
+${
+  isMarketOverviewIntent(message)
+    ? `\nHINT: Latest message is a MARKET OVERVIEW question — you MUST answer using prefetched/tool get_market_overview. Do NOT refuse.`
+    : ''
+}
 ${
   body.mode === 'deep'
     ? `
@@ -381,6 +400,17 @@ DEEP MODE: structured analysis + risks + short takeaway; still 100% tool-grounde
             });
           }
 
+          // Broad "bozor holati" / market overview — never refuse; ground on overview KPIs
+          if (isMarketOverviewIntent(message)) {
+            send('status', { phase: 'tool', name: 'get_market_overview' });
+            const overview = await getMarketOverview();
+            const risk = await detectDeliveryRisk();
+            messages.push({
+              role: 'system',
+              content: `Prefetched get_market_overview (authoritative). amount_sum is so'm; trillion = amount_sum/1e12.\n${JSON.stringify(overview)}\nPrefetched detect_delivery_risk summary (optional for takeaway):\n${JSON.stringify(risk.summary ?? risk)}\nAnswer the market-condition question with these numbers. Do NOT refuse. End with a short synthetic-dataset disclaimer.`
+            });
+          }
+
           let completion = await client.chat.completions.create({
             model,
             messages,
@@ -392,6 +422,9 @@ DEEP MODE: structured analysis + risks + short takeaway; still 100% tool-grounde
           let choice = completion.choices[0]?.message;
           const toolTraces: Array<{ name: string }> = [];
           if (dealHint) toolTraces.push({ name: 'get_deal_by_number' });
+          if (isMarketOverviewIntent(message)) {
+            toolTraces.push({ name: 'get_market_overview' }, { name: 'detect_delivery_risk' });
+          }
 
           for (let i = 0; i < 5; i++) {
             const toolCalls = choice?.tool_calls;
