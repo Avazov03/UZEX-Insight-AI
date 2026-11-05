@@ -425,16 +425,15 @@ DEEP MODE: structured analysis + risks + short takeaway; still 100% tool-grounde
 
           send('meta', { tools: toolTraces });
 
-          if (choice?.content) {
+          // Pace tokens so the UI types like a chat bot (instant dump felt broken).
+          if (choice?.content && !choice.tool_calls?.length) {
             const text = choice.content;
-            const chunkSize = 16;
+            const chunkSize = 8;
             for (let i = 0; i < text.length; i += chunkSize) {
               send('token', { t: text.slice(i, i + chunkSize) });
+              await new Promise((resolve) => setTimeout(resolve, 10));
             }
           } else {
-            if (choice) {
-              messages.push(choice as OpenAI.Chat.Completions.ChatCompletionMessageParam);
-            }
             const finalStream = await client.chat.completions.create({
               model,
               messages,

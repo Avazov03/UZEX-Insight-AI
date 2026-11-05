@@ -27,6 +27,11 @@ export const metadata: Metadata = {
   },
   description:
     'AI-powered commodity market intelligence platform for UZEX exchange analytics, pricing, and risk.',
+  icons: {
+    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
+    shortcut: ['/favicon.svg'],
+    apple: [{ url: '/favicon.svg' }]
+  },
   openGraph: {
     title: 'UZEX Insight AI',
     description:

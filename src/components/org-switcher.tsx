@@ -32,8 +32,16 @@ function BrandHeader({ state }: { state: string }) {
     <SidebarMenu>
       <SidebarMenuItem>
         <SidebarMenuButton size='lg' render={<a href='/dashboard/ai-assistant' />}>
-          <div className='bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg'>
-            <Icons.sparkles className='size-4' />
+          <div className='relative size-8 shrink-0 overflow-hidden rounded-lg'>
+            <Image
+              src='/favicon.svg'
+              alt=''
+              width={32}
+              height={32}
+              className='size-8'
+              priority
+              unoptimized
+            />
           </div>
           <div
             className={`grid flex-1 text-left text-sm leading-tight transition-all duration-200 ease-in-out ${
