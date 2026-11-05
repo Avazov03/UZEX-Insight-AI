@@ -228,6 +228,34 @@ function extractDealNumberHint(message: string): string | null {
   return m?.[1] ?? null;
 }
 
+/** Conservative gate: only block clearly non-UZEX requests. */
+function isClearlyOffTopic(message: string): boolean {
+  const t = message.toLowerCase();
+  const uzexCue =
+    /uzex|бирж|bitim|sdelk|deal|kontrakt|shartnoma|broker|paxta|хлоп|пшениц|сахар|narx|цена|risk|yetkaz|постав|auction|аукцион|ishtirok|участник|inn|stir|bk\d{2,}|dashboard|bozor|рынок|insight/i.test(
+      message
+    );
+  if (uzexCue) return false;
+
+  return (
+    /\b(python|javascript|typescript|java|c\+\+|golang|sql query yoz|quicksort|bubblesort|leetcode|homework|домашн|рецепт|recipe|joke|анекдот|погода|weather|крипт|bitcoin|nft|chatgpt|напиши код|kod yoz|write (a )?code|функция|function\s*\()/i.test(
+      t
+    ) ||
+    /\b(medical|диагноз|симптом|president|политика|выборы)\b/i.test(t)
+  );
+}
+
+function offTopicRefusal(message: string, fallbackLang: string): string {
+  const hasCyrillic = /[А-Яа-яЁё]/.test(message);
+  if (hasCyrillic) {
+    return 'Я отвечаю только по данным биржи UZEX (сделки, цены, участники, брокеры, риски) и по этому дашборду. Пожалуйста, задайте вопрос по рынку UZEX.';
+  }
+  if (fallbackLang.startsWith('English') || /\b(the|please|write|code)\b/i.test(message)) {
+    return 'I only answer UZEX market questions (deals, prices, participants, brokers, risk) and questions about this dashboard. Please ask something about the UZEX dataset.';
+  }
+  return 'Men faqat UZEX bozor ma’lumotlari (bitimlar, narxlar, ishtirokchilar, brokerlar, risk) va shu dashboard bo‘yicha javob beraman. Iltimos, UZEX bozoriga oid savol bering.';
+}
+
 export async function POST(req: Request) {
   try {
     const apiKey = process.env.OPENAI_API_KEY;
@@ -270,49 +298,48 @@ export async function POST(req: Request) {
     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
       {
         role: 'system',
-        content: `You are UZEX Insight AI — analyst for the UZEX synthetic exchange dataset in PostgreSQL (500k deals).
+        content: `You are UZEX Insight AI — a strict data analyst for the UZEX synthetic exchange dataset in PostgreSQL (~500k deals). You are NOT a general chatbot.
 
 LANGUAGE (highest priority):
-- Reply in the language of the user's LATEST message (UZ/RU/EN). Ignore UI locale and prior reply language if the latest message switched.
+- Reply in the language of the user's LATEST message (UZ/RU/EN).
 - If ambiguous, fall back to ${uiLanguageFallback}.
 
-CRITICAL LOOKUP RULES:
-- If the user mentions a deal/lot/transaction number (e.g. 280097), ALWAYS call get_deal_by_number FIRST. Never say "not found" without that tool.
-- If they mention a contract number, call get_contract_by_number.
-- If they mention broker code like BK042, call lookup_broker.
-- If they mention INN or company name, call lookup_participant.
-- Status meanings → get_status_glossary. Auction types → get_trade_type_stats. Deadline breaches → analyze_deadline_breaches.
-- Never invent numbers, company names, products, or dates. If a tool returns found:false, say clearly that it is not in the dataset.
+HARD SCOPE (do not break):
+- ONLY: UZEX deals/contracts/products/prices/regions/brokers/participants/risk/deadlines/auction types/USD rates in THIS dataset, OR how to use this UZEX Insight AI dashboard.
+- REFUSE off-topic in 1–2 short sentences and redirect to UZEX market questions. Examples to refuse: programming/code, homework, politics, medicine, recipes, jokes, crypto trading advice, general knowledge.
+- Do NOT write code, essays, or tutorials for unrelated topics — even if the user insists.
+
+NO HALLUCINATION (do not break):
+- Every number, name, INN, broker code, date, status, and product MUST come from a tool result (or the prefetched deal JSON).
+- If tools return found:false / empty / no rows: say clearly that this is NOT in the dataset. Do not guess.
+- If the year/product/region is outside the data: say so. Do not invent prices or companies.
+- Prefer "ma'lumot yo'q / нет в данных / not in dataset" over a plausible-sounding answer.
+- Never fill gaps with world knowledge about real UZEX, gold prices, or future years.
+
+LOOKUP RULES:
+- Deal/lot number → get_deal_by_number FIRST. Never claim missing without that tool.
+- Contract number → get_contract_by_number.
+- Broker code (BK…) → lookup_broker. INN/company → lookup_participant.
+- Status meanings → get_status_glossary. Auctions → get_trade_type_stats. Deadline breaches → analyze_deadline_breaches.
+- Totals/KPIs → get_market_overview. Product prices → analyze_product_prices. Year compare → compare_years.
 
 COLUMN MAPPING (never confuse):
-- trade_type = Тип торгов (auction type) — NOT the product
+- trade_type = Тип торгов (auction) — NOT product
 - product_name = Наименование товара
-- start_price = Стартовая цена PER UNIT
-- amount = Сумма сделки TOTAL
-- final unit price = amount / (quantity * lot)
-- contract_no = Номер контракта — NOT a price
-- quantity = Количество; lot = Лот; delivered compared to quantity
+- start_price = per-unit start; amount = total; final unit = amount/(quantity*lot)
+- contract_no is NOT a price
 
-DEADLINES (README):
-- Payment due = deal_date + payment_days (calendar days)
-- Delivery due = actual payment_date + delivery_days (calendar days)
-- Status snapshot date = 2026-10-30 (not live realtime)
-- Ждёт оплату = signed Spot awaiting payment; Заключен = signed Forward/Futures awaiting payment
-- Fully completed ONLY: Исполнен. Оплачен is paid but not fully delivered. Исполнен(Частично) is partial.
-
-SCOPE:
-- UZEX market data + this product's features.
-- Off-topic → short refuse + redirect.
+DEADLINES / STATUS (README snapshot 2026-10-30):
+- Payment due = deal_date + payment_days; delivery due = payment_date + delivery_days
+- Fully completed ONLY: Исполнен. Оплачен ≠ completed. Исполнен(Частично) = partial. Аннулирован = not fulfilled.
 
 STYLE:
-- Concise, human, bullets when listing.
-- Cite key figures from tools; mention source tables when useful (deals/contracts/participants/brokers).
-- Never paste raw JSON.
-${dealHint ? `\nHINT: Latest message likely refers to deal_no=${dealHint} — call get_deal_by_number.` : ''}
+- Concise, human, bullets for lists. No raw JSON. No code blocks unless the user asks how this product works and a tiny example is essential (almost never).
+${dealHint ? `\nHINT: Latest message likely refers to deal_no=${dealHint} — use prefetched get_deal_by_number result.` : ''}
 ${
   body.mode === 'deep'
     ? `
-DEEP MODE: more structured analysis, risks, short takeaway; still tool-grounded.`
+DEEP MODE: structured analysis + risks + short takeaway; still 100% tool-grounded.`
     : ''
 }`
       },
@@ -333,13 +360,24 @@ DEEP MODE: more structured analysis, risks, short takeaway; still tool-grounded.
         try {
           send('status', { phase: 'analyzing' });
 
+          if (isClearlyOffTopic(message)) {
+            const refusal = offTopicRefusal(message, uiLanguageFallback);
+            const chunkSize = 24;
+            for (let i = 0; i < refusal.length; i += chunkSize) {
+              send('token', { t: refusal.slice(i, i + chunkSize) });
+            }
+            send('meta', { tools: [] });
+            send('done', { ok: true, refused: true });
+            return;
+          }
+
           // If deal number is obvious, prefetch so the model always has facts
           if (dealHint) {
             send('status', { phase: 'tool', name: 'get_deal_by_number' });
             const prefetched = await getDealByNumber(dealHint);
             messages.push({
               role: 'system',
-              content: `Prefetched get_deal_by_number(${dealHint}) result (authoritative):\n${JSON.stringify(prefetched)}`
+              content: `Prefetched get_deal_by_number(${dealHint}) result (authoritative):\n${JSON.stringify(prefetched)}\nIf found:false, tell the user the deal is not in the dataset — do not invent.`
             });
           }
 
@@ -348,7 +386,7 @@ DEEP MODE: more structured analysis, risks, short takeaway; still tool-grounded.
             messages,
             tools,
             tool_choice: 'auto',
-            temperature: 0.1
+            temperature: 0
           });
 
           let choice = completion.choices[0]?.message;
@@ -380,7 +418,7 @@ DEEP MODE: more structured analysis, risks, short takeaway; still tool-grounded.
               model,
               messages,
               tools,
-              temperature: 0.1
+              temperature: 0
             });
             choice = completion.choices[0]?.message;
           }
@@ -401,7 +439,7 @@ DEEP MODE: more structured analysis, risks, short takeaway; still tool-grounded.
               model,
               messages,
               tool_choice: 'none',
-              temperature: 0.1,
+              temperature: 0,
               stream: true
             });
             for await (const part of finalStream) {
