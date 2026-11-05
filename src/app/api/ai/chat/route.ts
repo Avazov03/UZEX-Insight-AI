@@ -99,6 +99,7 @@ export async function POST(req: Request) {
     const body = (await req.json()) as {
       message?: string;
       locale?: string;
+      mode?: string;
       history?: Array<{ role?: string; content?: string }>;
     };
     const message = body.message?.trim();
@@ -153,7 +154,15 @@ DATA RULES:
 STYLE:
 - Be concise and human-readable.
 - Use short paragraphs and bullet lists with - when listing.
-- Never paste raw JSON, code blocks, or tool payloads in the reply — only natural language with key figures.`
+- Never paste raw JSON, code blocks, or tool payloads in the reply — only natural language with key figures.
+${
+  body.mode === 'deep'
+    ? `
+DEEP ANALYSIS MODE (user enabled):
+- Be more thorough: structure the answer, compare dimensions, call out risks/caveats, and end with a short actionable takeaway.
+- Still stay within scope and use tools for numbers.`
+    : ''
+}`
       },
       ...history.map((turn) => ({
         role: turn.role,

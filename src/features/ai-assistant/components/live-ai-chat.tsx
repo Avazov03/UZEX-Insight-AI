@@ -124,7 +124,11 @@ export function LiveAiChat() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [deepAnalysis, setDeepAnalysis] = useState(false);
+  const [showQuickPrompts, setShowQuickPrompts] = useState(false);
+  const [composerFocused, setComposerFocused] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const activeIdRef = useRef(activeId);
   const threadsRef = useRef(threads);
 
@@ -292,6 +296,7 @@ export function LiveAiChat() {
         body: JSON.stringify({
           message,
           locale,
+          mode: deepAnalysis ? 'deep' : 'default',
           history: historyPayload
         })
       });
@@ -363,18 +368,29 @@ export function LiveAiChat() {
     }
   }
 
+  const canSend = Boolean(input.trim()) && !loading;
+  const composerExpanded = composerFocused || input.trim().length > 0 || !isEmpty;
+
   const composer = (
     <div
       className={cn(
-        'bg-muted/70 w-full rounded-[1.75rem] px-3 py-2 shadow-sm ring-1 ring-black/5 transition-all duration-500 ease-out dark:ring-white/10',
-        isEmpty ? 'max-w-2xl' : 'max-w-3xl'
+        'bg-muted/80 dark:bg-muted/50 w-full border border-black/5 shadow-lg backdrop-blur-md transition-all duration-300 ease-out dark:border-white/10',
+        isEmpty ? 'max-w-2xl' : 'max-w-3xl',
+        composerExpanded ? 'rounded-[1.75rem] p-3 sm:p-3.5' : 'rounded-full px-2 py-1.5 sm:px-2.5'
       )}
     >
       <Textarea
+        ref={textareaRef}
         value={input}
         onChange={(e) => setInput(e.target.value)}
+        onFocus={() => setComposerFocused(true)}
+        onBlur={() => setComposerFocused(false)}
         placeholder={t('ai.askMarket')}
-        className='min-h-12 resize-none border-0 bg-transparent px-2 py-2.5 text-[15px] shadow-none focus-visible:ring-0'
+        rows={1}
+        className={cn(
+          'max-h-48 min-h-11 w-full resize-none border-0 bg-transparent px-2.5 py-2.5 text-[15px] leading-relaxed shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent',
+          composerExpanded ? 'min-h-16' : 'min-h-11'
+        )}
         data-testid='ai-chat-input'
         aria-label={t('ai.askMarket')}
         onKeyDown={(e) => {
@@ -384,22 +400,67 @@ export function LiveAiChat() {
           }
         }}
       />
-      <div className='flex items-center justify-between gap-2 px-1 pb-1'>
-        <p className='text-muted-foreground text-[11px]'>{t('ai.enterHint')}</p>
-        <Button
-          data-testid='ai-chat-send'
-          size='icon-sm'
-          className='rounded-full'
-          disabled={loading || !input.trim()}
-          onClick={() => void send(input)}
-          aria-label={t('ai.send')}
-        >
-          {loading ? (
-            <Icons.spinner className='size-4 animate-spin' />
-          ) : (
-            <Icons.send className='size-4' />
-          )}
-        </Button>
+
+      <div
+        className={cn(
+          'flex items-center gap-2 px-0.5',
+          composerExpanded ? 'mt-1 justify-between pt-1' : 'justify-between'
+        )}
+      >
+        <div className='flex min-w-0 items-center gap-1.5'>
+          <Button
+            type='button'
+            variant='ghost'
+            size='icon-sm'
+            className='text-muted-foreground hover:text-foreground size-8 shrink-0 rounded-full'
+            aria-label={t('ai.composerPlus')}
+            aria-expanded={showQuickPrompts}
+            onClick={() => setShowQuickPrompts((v) => !v)}
+          >
+            <Icons.add className='size-4' />
+          </Button>
+          {composerExpanded ? (
+            <p className='text-muted-foreground hidden truncate text-[11px] sm:block'>
+              {t('ai.enterHint')}
+            </p>
+          ) : null}
+        </div>
+
+        <div className='flex shrink-0 items-center gap-1.5'>
+          <button
+            type='button'
+            title={t('ai.deepAnalysisHint')}
+            aria-pressed={deepAnalysis}
+            onClick={() => setDeepAnalysis((v) => !v)}
+            className={cn(
+              'inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium transition-colors',
+              deepAnalysis
+                ? 'border-primary/40 bg-primary/10 text-primary'
+                : 'border-border/70 text-muted-foreground hover:bg-muted hover:text-foreground'
+            )}
+          >
+            <Icons.sparkles className='size-3.5' />
+            <span className='hidden sm:inline'>{t('ai.deepAnalysis')}</span>
+          </button>
+
+          <Button
+            data-testid='ai-chat-send'
+            size='icon-sm'
+            className={cn(
+              'size-9 rounded-full shadow-sm transition-opacity',
+              canSend ? 'opacity-100' : 'opacity-45'
+            )}
+            disabled={!canSend}
+            onClick={() => void send(input)}
+            aria-label={t('ai.send')}
+          >
+            {loading ? (
+              <Icons.spinner className='size-4 animate-spin' />
+            ) : (
+              <Icons.arrowUp className='size-4' />
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -473,7 +534,7 @@ export function LiveAiChat() {
           )}
         >
           {composer}
-          {isEmpty ? (
+          {(isEmpty || showQuickPrompts) && (
             <div
               className='flex max-w-2xl flex-wrap justify-center gap-2'
               data-testid='ai-suggested-prompts'
@@ -483,15 +544,19 @@ export function LiveAiChat() {
                   key={prompt}
                   type='button'
                   className='hover:bg-muted rounded-full bg-muted/40 px-3.5 py-2 text-left text-xs transition-colors'
-                  onClick={() => void send(prompt)}
+                  onClick={() => {
+                    setShowQuickPrompts(false);
+                    void send(prompt);
+                  }}
                 >
                   {prompt}
                 </button>
               ))}
             </div>
-          ) : (
-            <p className='text-muted-foreground text-center text-[11px]'>{t('ai.scopeHint')}</p>
           )}
+          {!isEmpty && !showQuickPrompts ? (
+            <p className='text-muted-foreground text-center text-[11px]'>{t('ai.scopeHint')}</p>
+          ) : null}
         </div>
       </div>
     </div>
