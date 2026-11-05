@@ -124,8 +124,6 @@ export function LiveAiChat() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
-  const [deepAnalysis, setDeepAnalysis] = useState(false);
-  const [showQuickPrompts, setShowQuickPrompts] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const activeIdRef = useRef(activeId);
@@ -287,6 +285,9 @@ export function LiveAiChat() {
       ]
     }));
     setInput('');
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
 
     try {
       const res = await fetch('/api/ai/chat', {
@@ -295,7 +296,7 @@ export function LiveAiChat() {
         body: JSON.stringify({
           message,
           locale,
-          mode: deepAnalysis ? 'deep' : 'default',
+          mode: 'default',
           history: historyPayload
         })
       });
@@ -372,17 +373,22 @@ export function LiveAiChat() {
   const composer = (
     <div
       className={cn(
-        'bg-muted/90 w-full rounded-[1.75rem] border border-black/5 p-3 shadow-lg dark:border-white/10 dark:bg-muted/60',
-        'focus-within:ring-ring/20 focus-within:ring-2'
+        'bg-muted/80 flex w-full items-end gap-2 rounded-3xl border border-black/5 px-3 py-2 shadow-sm dark:border-white/10 dark:bg-muted/50',
+        'focus-within:ring-ring/20 focus-within:ring-1'
       )}
     >
       <Textarea
         ref={textareaRef}
         value={input}
-        onChange={(e) => setInput(e.target.value)}
+        onChange={(e) => {
+          setInput(e.target.value);
+          const el = e.target;
+          el.style.height = 'auto';
+          el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+        }}
         placeholder={t('ai.askMarket')}
         rows={1}
-        className='max-h-48 min-h-12 w-full resize-none border-0 bg-transparent px-2 py-2 text-[15px] leading-relaxed shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent'
+        className='max-h-40 min-h-9 flex-1 resize-none border-0 bg-transparent px-1 py-1.5 text-sm leading-5 shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent'
         data-testid='ai-chat-input'
         aria-label={t('ai.askMarket')}
         onKeyDown={(e) => {
@@ -393,59 +399,27 @@ export function LiveAiChat() {
         }}
       />
 
-      <div className='mt-1 flex items-center justify-between gap-2 px-0.5'>
-        <Button
-          type='button'
-          variant='ghost'
-          size='icon-sm'
-          className='text-muted-foreground hover:text-foreground size-8 shrink-0 rounded-full'
-          aria-label={t('ai.composerPlus')}
-          aria-expanded={showQuickPrompts}
-          onClick={() => setShowQuickPrompts((v) => !v)}
-        >
-          <Icons.add className='size-4' />
-        </Button>
-
-        <div className='flex shrink-0 items-center gap-1.5'>
-          <button
-            type='button'
-            title={t('ai.deepAnalysisHint')}
-            aria-pressed={deepAnalysis}
-            onClick={() => setDeepAnalysis((v) => !v)}
-            className={cn(
-              'inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium transition-colors',
-              deepAnalysis
-                ? 'border-primary/40 bg-primary/10 text-primary'
-                : 'border-border/70 text-muted-foreground hover:bg-background/60 hover:text-foreground'
-            )}
-          >
-            <Icons.sparkles className='size-3.5' />
-            <span className='hidden sm:inline'>{t('ai.deepAnalysis')}</span>
-          </button>
-
-          <Button
-            data-testid='ai-chat-send'
-            size='icon-sm'
-            className={cn(
-              'size-9 rounded-full shadow-sm transition-opacity',
-              canSend ? 'opacity-100' : 'opacity-40'
-            )}
-            disabled={!canSend}
-            onClick={() => void send(input)}
-            aria-label={t('ai.send')}
-          >
-            {loading ? (
-              <Icons.spinner className='size-4 animate-spin' />
-            ) : (
-              <Icons.arrowUp className='size-4' />
-            )}
-          </Button>
-        </div>
-      </div>
+      <Button
+        data-testid='ai-chat-send'
+        size='icon-sm'
+        className={cn(
+          'mb-0.5 size-8 shrink-0 rounded-full shadow-sm transition-opacity',
+          canSend ? 'opacity-100' : 'opacity-40'
+        )}
+        disabled={!canSend}
+        onClick={() => void send(input)}
+        aria-label={t('ai.send')}
+      >
+        {loading ? (
+          <Icons.spinner className='size-3.5 animate-spin' />
+        ) : (
+          <Icons.arrowUp className='size-3.5' />
+        )}
+      </Button>
     </div>
   );
 
-  const quickPrompts = (isEmpty || showQuickPrompts) && (
+  const quickPrompts = (
     <div
       className='flex w-full max-w-3xl flex-wrap justify-center gap-2'
       data-testid='ai-suggested-prompts'
@@ -455,10 +429,7 @@ export function LiveAiChat() {
           key={prompt}
           type='button'
           className='hover:bg-muted rounded-full bg-muted/40 px-3.5 py-2 text-left text-xs transition-colors'
-          onClick={() => {
-            setShowQuickPrompts(false);
-            void send(prompt);
-          }}
+          onClick={() => void send(prompt)}
         >
           {prompt}
         </button>
@@ -473,18 +444,23 @@ export function LiveAiChat() {
       data-hydrated={hydrated ? 'true' : 'false'}
       data-empty={isEmpty ? 'true' : 'false'}
     >
-      {/* Only messages scroll — composer stays docked */}
-      <div ref={scrollRef} className='min-h-0 flex-1 overflow-y-auto'>
-        <div className='mx-auto w-full max-w-3xl px-3 sm:px-4'>
-          {isEmpty ? (
-            <div className='flex min-h-[min(52vh,26rem)] flex-col items-center justify-center gap-3 py-8 text-center'>
+      {isEmpty ? (
+        <div className='flex min-h-0 flex-1 flex-col items-center justify-center px-3 py-8 sm:px-4'>
+          <div className='mx-auto flex w-full max-w-3xl flex-col items-center gap-6'>
+            <div className='space-y-2 text-center'>
               <p className='text-foreground text-3xl font-medium tracking-tight sm:text-4xl'>
                 {t('ai.startPrompt')}
               </p>
               <p className='text-muted-foreground text-sm'>{t('ai.askHint')}</p>
             </div>
-          ) : (
-            <div className='space-y-6 py-6'>
+            {composer}
+            {quickPrompts}
+          </div>
+        </div>
+      ) : (
+        <>
+          <div ref={scrollRef} className='min-h-0 flex-1 overflow-y-auto'>
+            <div className='mx-auto w-full max-w-3xl space-y-6 px-3 py-6 sm:px-4'>
               {items.map((item) => (
                 <div key={item.id} className='w-full'>
                   {item.role === 'user' ? (
@@ -520,19 +496,18 @@ export function LiveAiChat() {
                 <p className='text-destructive text-center text-sm'>{error}</p>
               ) : null}
             </div>
-          )}
-        </div>
-      </div>
+          </div>
 
-      <div className='bg-background/85 shrink-0 border-t border-transparent backdrop-blur-md'>
-        <div className='mx-auto flex w-full max-w-3xl flex-col items-center gap-3 px-3 pt-2 pb-3 sm:px-4'>
-          {quickPrompts}
-          {composer}
-          {!isEmpty && !showQuickPrompts ? (
-            <p className='text-muted-foreground text-center text-[11px]'>{t('ai.scopeHint')}</p>
-          ) : null}
-        </div>
-      </div>
+          <div className='bg-background/85 shrink-0 backdrop-blur-md'>
+            <div className='mx-auto w-full max-w-3xl px-3 pt-2 pb-3 sm:px-4'>
+              {composer}
+              <p className='text-muted-foreground mt-2 text-center text-[11px]'>
+                {t('ai.scopeHint')}
+              </p>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
