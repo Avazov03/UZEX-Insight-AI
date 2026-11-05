@@ -1,6 +1,6 @@
 import { requireAuth } from '@/lib/auth-guard';
 import { LocalizedPageContainer } from '@/components/i18n/localized-page-container';
-import { AiAssistantWorkspace } from '@/features/ai-assistant/components/ai-assistant-workspace';
+import { LiveAiChat } from '@/features/ai-assistant/components/live-ai-chat';
 
 export const metadata = {
   title: 'AI Assistant'
@@ -14,7 +14,7 @@ export default async function Page() {
       titleKey='pages.aiAssistant.title'
       descriptionKey='pages.aiAssistant.description'
     >
-      <AiAssistantWorkspace />
+      <LiveAiChat />
     </LocalizedPageContainer>
   );
 }

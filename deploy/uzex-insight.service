@@ -1,0 +1,16 @@
+[Unit]
+Description=UZEX Insight AI Next.js
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/var/www/uzex-insight/app
+EnvironmentFile=/var/www/uzex-insight/app/.env.production
+ExecStart=/usr/bin/npm run start -- -p 3010
+Restart=always
+RestartSec=5
+MemoryMax=450M
+
+[Install]
+WantedBy=multi-user.target
