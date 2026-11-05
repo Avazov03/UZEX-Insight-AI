@@ -234,7 +234,7 @@ async function runTool(name: string, argsJson: string) {
       return analyzeRegionTrade({
         year: args.year ? Number(args.year) : 2024,
         categoryHint: args.categoryHint ? String(args.categoryHint) : undefined,
-        limit: args.limit ? Number(args.limit) : 20
+        limit: args.limit ? Number(args.limit) : 30
       });
     case 'compare_years':
       return compareYears(
@@ -259,6 +259,27 @@ function extractDealNumberHint(message: string): string | null {
 /** Broad market-condition / KPI questions → always answer with get_market_overview. */
 function isMarketOverviewIntent(message: string): boolean {
   return /bozor\s*holat|holati\s*qanday|рынок.*(состоян|обзор|как)|market\s*(overview|condition|state|status)|umumiy\s*(tahlil|ko'?rsatkich|statistika)|jami\s*bitim|total\s*deal|savdo\s*hajm|объем\s*торг|kpi|dashboard\s*overview|bozor\s*(haqida|qanday)|как\s*(обстоит|обзор).*рынок|what.?s\s*(the\s*)?market/i.test(
+    message
+  );
+}
+
+/** Region × category breakdown (hududlar / top-5 / past-5). */
+function isRegionTradeIntent(message: string): boolean {
+  return /hudud|viloyat|регион|region|top-?\s*5|past-?\s*5|bottom-?\s*5|eng\s*(yuqori|past)|по\s*регион/i.test(
+    message
+  );
+}
+
+function extractYearHint(message: string, fallback = 2024): number {
+  const m = message.match(/\b(20[2-3]\d)\b/);
+  if (!m) return fallback;
+  const y = Number(m[1]);
+  return y >= 2022 && y <= 2026 ? y : fallback;
+}
+
+/** Same-period year dynamics — not product compare_years. */
+function isYearDynamicsIntent(message: string): boolean {
+  return /2025.*2026|2026.*2025|yillik\s*(dinamika|o'sish|osish)|динамик|yoy|same.?period|o'sganmi|орос|рост.*год|savdo\s*dinamikasi/i.test(
     message
   );
 }
@@ -442,6 +463,46 @@ DEEP MODE: structured analysis + risks + short takeaway; still 100% tool-grounde
             });
           }
 
+          // Region ranking — force authoritative top5/bottom5 (model must not copy top into bottom)
+          if (isRegionTradeIntent(message)) {
+            const year = extractYearHint(message, 2024);
+            send('status', { phase: 'tool', name: 'analyze_region_trade' });
+            const regional = await analyzeRegionTrade({
+              year,
+              categoryHint: /qishloq|сельск|agri|agro|paxta|пахта|хлоп/i.test(message)
+                ? 'qishloq'
+                : undefined,
+              limit: 30
+            });
+            messages.push({
+              role: 'system',
+              content: `Prefetched analyze_region_trade (authoritative). Use top5 and bottom5 EXACTLY as given — they are DIFFERENT lists. Never duplicate top5 into past/bottom-5. Emit two markdown tables.\n${JSON.stringify({
+                year: regional.year,
+                categoryHint: regional.categoryHint,
+                top5: regional.top5,
+                bottom5: regional.bottom5,
+                unit: regional.unit,
+                methodology: regional.methodology,
+                note: regional.note
+              })}`
+            });
+          }
+
+          // Year dynamics: use overview same-period series, NOT product compare_years
+          if (isYearDynamicsIntent(message) && !isRegionTradeIntent(message)) {
+            send('status', { phase: 'tool', name: 'get_market_overview' });
+            const overview = await getMarketOverview();
+            messages.push({
+              role: 'system',
+              content: `Prefetched year dynamics (authoritative). 2026 is partial through 2026-10-30. Prefer byYearThroughOct30 + yoySamePeriodPct. Do NOT conclude "decline" from full-year 2025 vs partial 2026.\n${JSON.stringify({
+                byYear: overview.byYear,
+                byYearThroughOct30: overview.byYearThroughOct30,
+                yoySamePeriodPct: overview.yoySamePeriodPct,
+                methodology: overview.methodology
+              })}`
+            });
+          }
+
           let completion = await client.chat.completions.create({
             model,
             messages,
@@ -455,6 +516,10 @@ DEEP MODE: structured analysis + risks + short takeaway; still 100% tool-grounde
           if (dealHint) toolTraces.push({ name: 'get_deal_by_number' });
           if (isMarketOverviewIntent(message)) {
             toolTraces.push({ name: 'get_market_overview' }, { name: 'detect_delivery_risk' });
+          }
+          if (isRegionTradeIntent(message)) toolTraces.push({ name: 'analyze_region_trade' });
+          if (isYearDynamicsIntent(message) && !isRegionTradeIntent(message)) {
+            toolTraces.push({ name: 'get_market_overview' });
           }
 
           for (let i = 0; i < 5; i++) {
