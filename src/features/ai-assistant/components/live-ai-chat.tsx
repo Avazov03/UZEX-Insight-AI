@@ -1,22 +1,24 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Icons } from '@/components/icons';
-import { Bubble, BubbleContent } from '@/components/ui/bubble';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { suggestedPrompts } from '../chat';
-
-type ChatItem = {
-  id: string;
-  role: 'user' | 'assistant';
-  text: string;
-  tools?: Array<{ name: string }>;
-  pending?: boolean;
-};
+import {
+  ACTIVE_THREAD_EVENT,
+  createThread,
+  getActiveThreadId,
+  loadThreads,
+  saveThreads,
+  setActiveThreadId,
+  sortThreads,
+  titleFromMessage,
+  toHistoryTurns,
+  type ChatThread
+} from '../lib/chat-store';
 
 function formatInline(text: string): ReactNode[] {
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
@@ -35,14 +37,14 @@ function formatInline(text: string): ReactNode[] {
 function FormattedReply({ text }: { text: string }) {
   const lines = text.split('\n');
   return (
-    <div className='space-y-1.5 text-sm leading-relaxed'>
+    <div className='space-y-2 text-[15px] leading-relaxed'>
       {lines.map((line, i) => {
         const trimmed = line.trim();
-        if (!trimmed) return <div key={i} className='h-1.5' />;
+        if (!trimmed) return <div key={i} className='h-2' />;
         if (/^[-•*]\s+/.test(trimmed)) {
           return (
-            <div key={i} className='flex gap-2 pl-0.5'>
-              <span className='text-muted-foreground mt-1.5 size-1 shrink-0 rounded-full bg-current' />
+            <div key={i} className='flex gap-2.5 pl-0.5'>
+              <span className='text-muted-foreground mt-2 size-1 shrink-0 rounded-full bg-current' />
               <span>{formatInline(trimmed.replace(/^[-•*]\s+/, ''))}</span>
             </div>
           );
@@ -68,21 +70,26 @@ function toolLabel(name: string, t: (key: string) => string): string {
   }
 }
 
-function PendingBubble() {
+function ThinkingLoader({
+  label,
+  tools
+}: {
+  label: string;
+  tools?: Array<{ name: string }>;
+}) {
   return (
-    <Bubble variant='muted'>
-      <BubbleContent>
-        <div className='flex items-center gap-2 py-0.5' role='status' aria-label='loading'>
-          <span className='bg-muted-foreground/40 size-1.5 animate-pulse rounded-full' />
-          <span className='bg-muted-foreground/40 size-1.5 animate-pulse rounded-full [animation-delay:120ms]' />
-          <span className='bg-muted-foreground/40 size-1.5 animate-pulse rounded-full [animation-delay:240ms]' />
-        </div>
-        <div className='mt-3 space-y-2'>
-          <div className='bg-muted-foreground/15 h-3 w-48 animate-pulse rounded' />
-          <div className='bg-muted-foreground/15 h-3 w-36 animate-pulse rounded' />
-        </div>
-      </BubbleContent>
-    </Bubble>
+    <div className='flex flex-col gap-2 py-1' role='status' aria-live='polite'>
+      <div className='flex items-center gap-2.5'>
+        <Icons.sparkles className='text-primary size-4 animate-pulse' />
+        <span className='shimmer text-muted-foreground text-sm font-medium'>{label}</span>
+      </div>
+      {tools?.length ? (
+        <p className='text-muted-foreground flex items-center gap-1.5 pl-6 text-[11px]'>
+          <Icons.chartBar className='size-3' />
+          {tools.map((tool) => tool.name).join(', ')}
+        </p>
+      ) : null}
+    </div>
   );
 }
 
@@ -112,20 +119,132 @@ function parseSseChunk(
 export function LiveAiChat() {
   const { t, locale } = useI18n();
   const [input, setInput] = useState('');
-  const [items, setItems] = useState<ChatItem[]>([]);
+  const [threads, setThreads] = useState<ChatThread[]>([]);
+  const [activeId, setActiveId] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const activeIdRef = useRef(activeId);
+  const threadsRef = useRef(threads);
 
   useEffect(() => {
+    activeIdRef.current = activeId;
+  }, [activeId]);
+
+  useEffect(() => {
+    threadsRef.current = threads;
+  }, [threads]);
+
+  useEffect(() => {
+    const saved = loadThreads();
+    const sorted = sortThreads(saved);
+    const preferred = getActiveThreadId();
+    const draft = createThread();
+
+    if (sorted.length) {
+      const startId =
+        preferred && sorted.some((t) => t.id === preferred)
+          ? preferred
+          : sorted[0]!.id;
+      setThreads(sorted);
+      setActiveId(startId);
+      setActiveThreadId(startId);
+    } else {
+      setThreads([draft]);
+      setActiveId(draft.id);
+      setActiveThreadId(draft.id);
+    }
     setHydrated(true);
   }, []);
+
+  useEffect(() => {
+    function onActive(e: Event) {
+      const id = (e as CustomEvent<{ id: string | null }>).detail?.id;
+      if (!id || loading) return;
+      if (id === activeIdRef.current) {
+        // same id — still reload messages if sidebar restored from storage
+        const fromStore = loadThreads().find((t) => t.id === id);
+        if (fromStore) {
+          setThreads((prev) => {
+            const others = prev.filter((t) => t.id !== id);
+            return sortThreads([fromStore, ...others]);
+          });
+        }
+        return;
+      }
+      setThreads((prev) => {
+        const fromStore = loadThreads().find((t) => t.id === id);
+        if (fromStore) {
+          const others = prev.filter((t) => t.id !== id);
+          return sortThreads([fromStore, ...others]);
+        }
+        if (prev.some((t) => t.id === id)) return prev;
+        return [...prev, { ...createThread(), id }];
+      });
+      setActiveId(id);
+      setError(null);
+      setInput('');
+    }
+
+    function onNewChat(e: Event) {
+      if (loading) return;
+      const id =
+        (e as CustomEvent<{ id: string }>).detail?.id ?? createThread().id;
+      if (id === activeIdRef.current) {
+        const current = threadsRef.current.find((t) => t.id === id);
+        if (current && current.messages.length === 0) return;
+      }
+      const fresh = { ...createThread(), id };
+      setThreads((prev) => {
+        const kept = prev.filter((t) =>
+          t.messages.some((m) => m.text.trim() && !m.pending)
+        );
+        return [fresh, ...kept];
+      });
+      setActiveId(id);
+      setError(null);
+      setInput('');
+    }
+
+    window.addEventListener(ACTIVE_THREAD_EVENT, onActive);
+    window.addEventListener('uzex-ai-new-chat', onNewChat);
+    return () => {
+      window.removeEventListener(ACTIVE_THREAD_EVENT, onActive);
+      window.removeEventListener('uzex-ai-new-chat', onNewChat);
+    };
+  }, [loading]);
+
+  const activeThread = useMemo(
+    () => threads.find((x) => x.id === activeId) ?? threads[0],
+    [threads, activeId]
+  );
+  const items = activeThread?.messages ?? [];
+  const isEmpty = items.length === 0;
+
+  useEffect(() => {
+    if (!hydrated) return;
+    saveThreads(threads);
+  }, [threads, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated || !activeId) return;
+    if (getActiveThreadId() === activeId) return;
+    setActiveThreadId(activeId);
+  }, [activeId, hydrated]);
 
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [items, loading]);
+
+  function updateThread(id: string, updater: (thread: ChatThread) => ChatThread) {
+    setThreads((prev) => {
+      const has = prev.some((t) => t.id === id);
+      if (!has) return [...prev, updater({ ...createThread(), id })];
+      return prev.map((thread) => (thread.id === id ? updater(thread) : thread));
+    });
+  }
 
   async function send(text: string) {
     const message = text.trim();
@@ -133,19 +252,48 @@ export function LiveAiChat() {
     setError(null);
     setLoading(true);
 
-    const assistantId = `a-${Date.now()}`;
-    setItems((prev) => [
-      ...prev,
-      { id: `u-${Date.now()}`, role: 'user', text: message },
-      { id: assistantId, role: 'assistant', text: '', pending: true }
-    ]);
+    let threadId = activeIdRef.current;
+    const current = threadsRef.current.find((t) => t.id === threadId);
+    let historyPayload = toHistoryTurns(current?.messages ?? []);
+
+    if (!threadId || !current) {
+      const fresh = createThread();
+      threadId = fresh.id;
+      setActiveId(fresh.id);
+      activeIdRef.current = fresh.id;
+      setActiveThreadId(fresh.id);
+      historyPayload = [];
+      setThreads((prev) => [
+        fresh,
+        ...prev.filter((t) => t.messages.some((m) => m.text.trim() && !m.pending))
+      ]);
+    }
+
+    const userId = `u-${crypto.randomUUID()}`;
+    const assistantId = `a-${crypto.randomUUID()}`;
+    const now = Date.now();
+
+    updateThread(threadId, (thread) => ({
+      ...thread,
+      title: thread.title || titleFromMessage(message),
+      updatedAt: now,
+      messages: [
+        ...thread.messages,
+        { id: userId, role: 'user', text: message },
+        { id: assistantId, role: 'assistant', text: '', pending: true }
+      ]
+    }));
     setInput('');
 
     try {
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
-        body: JSON.stringify({ message, locale })
+        body: JSON.stringify({
+          message,
+          locale,
+          history: historyPayload
+        })
       });
 
       if (!res.ok || !res.body) {
@@ -166,23 +314,25 @@ export function LiveAiChat() {
         buffer = parseSseChunk(buffer, (event, data) => {
           if (event === 'meta') {
             const tools = (data as { tools?: Array<{ name: string }> }).tools ?? [];
-            setItems((prev) =>
-              prev.map((item) =>
+            updateThread(threadId, (thread) => ({
+              ...thread,
+              messages: thread.messages.map((item) =>
                 item.id === assistantId ? { ...item, tools, pending: !gotToken } : item
               )
-            );
+            }));
           }
           if (event === 'token') {
             const chunk = (data as { t?: string }).t ?? '';
             if (!chunk) return;
             gotToken = true;
-            setItems((prev) =>
-              prev.map((item) =>
+            updateThread(threadId, (thread) => ({
+              ...thread,
+              messages: thread.messages.map((item) =>
                 item.id === assistantId
                   ? { ...item, text: item.text + chunk, pending: false }
                   : item
               )
-            );
+            }));
           }
           if (event === 'error') {
             streamError = (data as { message?: string }).message || 'Stream error';
@@ -191,148 +341,157 @@ export function LiveAiChat() {
         if (streamError) throw new Error(streamError);
       }
 
-      setItems((prev) =>
-        prev.map((item) =>
+      updateThread(threadId, (thread) => ({
+        ...thread,
+        updatedAt: Date.now(),
+        messages: thread.messages.map((item) =>
           item.id === assistantId
-            ? {
-                ...item,
-                pending: false,
-                text: item.text || t('ai.emptyReply')
-              }
+            ? { ...item, pending: false, text: item.text || t('ai.emptyReply') }
             : item
         )
-      );
+      }));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error');
-      setItems((prev) =>
-        prev.filter((item) => !(item.id === assistantId && !item.text))
-      );
+      updateThread(threadId, (thread) => ({
+        ...thread,
+        messages: thread.messages.filter(
+          (item) => !(item.id === assistantId && !item.text)
+        )
+      }));
     } finally {
       setLoading(false);
     }
   }
 
-  function newChat() {
-    if (loading) return;
-    setItems([]);
-    setError(null);
-    setInput('');
-  }
+  const composer = (
+    <div
+      className={cn(
+        'bg-muted/70 w-full rounded-[1.75rem] px-3 py-2 shadow-sm ring-1 ring-black/5 transition-all duration-500 ease-out dark:ring-white/10',
+        isEmpty ? 'max-w-2xl' : 'max-w-3xl'
+      )}
+    >
+      <Textarea
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        placeholder={t('ai.askMarket')}
+        className='min-h-12 resize-none border-0 bg-transparent px-2 py-2.5 text-[15px] shadow-none focus-visible:ring-0'
+        data-testid='ai-chat-input'
+        aria-label={t('ai.askMarket')}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            void send(input);
+          }
+        }}
+      />
+      <div className='flex items-center justify-between gap-2 px-1 pb-1'>
+        <p className='text-muted-foreground text-[11px]'>{t('ai.enterHint')}</p>
+        <Button
+          data-testid='ai-chat-send'
+          size='icon-sm'
+          className='rounded-full'
+          disabled={loading || !input.trim()}
+          onClick={() => void send(input)}
+          aria-label={t('ai.send')}
+        >
+          {loading ? (
+            <Icons.spinner className='size-4 animate-spin' />
+          ) : (
+            <Icons.send className='size-4' />
+          )}
+        </Button>
+      </div>
+    </div>
+  );
 
   return (
     <div
-      className='bg-card flex min-h-[calc(100dvh-8rem)] flex-1 flex-col overflow-hidden rounded-xl border'
+      className='relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden'
       data-testid='ai-chat-root'
       data-hydrated={hydrated ? 'true' : 'false'}
+      data-empty={isEmpty ? 'true' : 'false'}
     >
-      <div className='flex shrink-0 items-center gap-2 border-b px-4 py-3'>
-        <div className='bg-primary/10 text-primary flex size-8 items-center justify-center rounded-lg'>
-          <Icons.sparkles className='size-4' />
-        </div>
-        <div className='min-w-0'>
-          <p className='text-sm font-medium'>{t('ai.analyst')}</p>
-          <p className='text-muted-foreground text-xs'>{t('ai.analystHint')}</p>
-        </div>
-        <div className='ml-auto flex items-center gap-2'>
-          <Button
-            type='button'
-            size='sm'
-            variant='outline'
-            data-testid='ai-new-chat'
-            onClick={newChat}
-            disabled={loading || items.length === 0}
+      <div
+        className={cn(
+          'mx-auto flex w-full max-w-3xl flex-1 flex-col px-3 transition-[justify-content,gap] duration-500 ease-out sm:px-4',
+          isEmpty ? 'justify-center gap-6 pb-8' : 'justify-end gap-0 pb-3'
+        )}
+      >
+        {!isEmpty ? (
+          <div
+            ref={scrollRef}
+            className='min-h-0 flex-1 space-y-6 overflow-y-auto py-6'
           >
-            <Icons.add className='size-4' />
-            {t('ai.newChat')}
-          </Button>
-          <Badge variant='outline'>{loading ? t('ai.analyzing') : t('ai.ready')}</Badge>
-        </div>
-      </div>
+            {items.map((item) => (
+              <div key={item.id} className='w-full'>
+                {item.role === 'user' ? (
+                  <div className='flex justify-center'>
+                    <div className='bg-muted max-w-[min(100%,34rem)] rounded-3xl px-4 py-2.5 text-[15px] leading-relaxed'>
+                      <span className='whitespace-pre-wrap'>{item.text}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className='w-full space-y-2'>
+                    {item.pending && !item.text ? (
+                      <ThinkingLoader
+                        label={
+                          item.tools?.length ? t('ai.searching') : t('ai.thinking')
+                        }
+                        tools={item.tools}
+                      />
+                    ) : (
+                      <FormattedReply text={item.text} />
+                    )}
+                    {!item.pending && item.tools?.length ? (
+                      <p className='text-muted-foreground flex items-center gap-1.5 text-[11px]'>
+                        <Icons.chartBar className='size-3' />
+                        {t('ai.tools')}:{' '}
+                        {item.tools.map((tool) => toolLabel(tool.name, t)).join(', ')}
+                      </p>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            ))}
+            {error ? (
+              <p className='text-destructive text-center text-sm'>{error}</p>
+            ) : null}
+          </div>
+        ) : (
+          <div className='space-y-3 text-center'>
+            <p className='text-foreground text-3xl font-medium tracking-tight sm:text-4xl'>
+              {t('ai.startPrompt')}
+            </p>
+            <p className='text-muted-foreground text-sm'>{t('ai.askHint')}</p>
+          </div>
+        )}
 
-      <div ref={scrollRef} className='min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4'>
-        {items.length === 0 ? (
-          <div className='text-muted-foreground flex h-full flex-col items-center justify-center gap-4 text-center text-sm'>
-            <Icons.sparkles className='text-primary size-10' />
-            <div className='max-w-md space-y-1'>
-              <p className='text-foreground text-base font-medium'>{t('ai.askMarket')}</p>
-              <p>{t('ai.askHint')}</p>
-            </div>
-            <div className='flex max-w-lg flex-wrap justify-center gap-2'>
+        <div
+          className={cn(
+            'flex w-full flex-col items-center gap-3 transition-all duration-500 ease-out',
+            isEmpty ? '' : 'pt-2'
+          )}
+        >
+          {composer}
+          {isEmpty ? (
+            <div
+              className='flex max-w-2xl flex-wrap justify-center gap-2'
+              data-testid='ai-suggested-prompts'
+            >
               {suggestedPrompts.map((prompt) => (
                 <button
                   key={prompt}
                   type='button'
-                  className='hover:bg-accent rounded-full border px-3 py-1.5 text-left text-xs transition-colors'
+                  className='hover:bg-muted rounded-full bg-muted/40 px-3.5 py-2 text-left text-xs transition-colors'
                   onClick={() => void send(prompt)}
                 >
                   {prompt}
                 </button>
               ))}
             </div>
-          </div>
-        ) : (
-          items.map((item) => (
-            <div
-              key={item.id}
-              className={cn('flex', item.role === 'user' ? 'justify-end' : 'justify-start')}
-            >
-              <div className='max-w-[min(100%,42rem)] space-y-2'>
-                {item.pending && !item.text ? (
-                  <PendingBubble />
-                ) : (
-                  <Bubble variant={item.role === 'user' ? 'default' : 'muted'}>
-                    <BubbleContent>
-                      {item.role === 'assistant' ? (
-                        <FormattedReply text={item.text} />
-                      ) : (
-                        <span className='whitespace-pre-wrap'>{item.text}</span>
-                      )}
-                    </BubbleContent>
-                  </Bubble>
-                )}
-                {item.role === 'assistant' && item.tools?.length ? (
-                  <p className='text-muted-foreground flex items-center gap-1.5 px-1 text-[11px]'>
-                    <Icons.chartBar className='size-3' />
-                    {t('ai.tools')}:{' '}
-                    {item.tools.map((tool) => toolLabel(tool.name, t)).join(', ')}
-                  </p>
-                ) : null}
-              </div>
-            </div>
-          ))
-        )}
-        {error ? <p className='text-destructive text-sm'>{error}</p> : null}
-      </div>
-
-      <div className='shrink-0 space-y-2 border-t p-3'>
-        <Textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder={t('ai.askMarket')}
-          className='min-h-20 resize-none'
-          data-testid='ai-chat-input'
-          aria-label={t('ai.askMarket')}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              void send(input);
-            }
-          }}
-        />
-        <div className='flex items-center justify-between gap-2'>
-          <p className='text-muted-foreground text-[11px]'>{t('ai.enterHint')}</p>
-          <Button
-            data-testid='ai-chat-send'
-            disabled={loading || !input.trim()}
-            onClick={() => void send(input)}
-          >
-            {loading ? (
-              <Icons.spinner className='size-4 animate-spin' />
-            ) : (
-              <Icons.send className='size-4' />
-            )}
-            {t('ai.send')}
-          </Button>
+          ) : (
+            <p className='text-muted-foreground text-center text-[11px]'>{t('ai.scopeHint')}</p>
+          )}
         </div>
       </div>
     </div>

@@ -77,6 +77,45 @@ test.describe('C — AI assistant (mocked LLM)', () => {
 
     await page.getByTestId('ai-new-chat').click();
     await expect(page.getByText(FIXED_REPLY)).toHaveCount(0);
-    await expect(page.getByRole('button', { name: /Bozor umumiy holati/i })).toBeVisible();
+    await expect(page.getByTestId('ai-suggested-prompts')).toBeVisible();
+  });
+
+  test('follow-up sends prior turns as history', async ({ authedPage: page }) => {
+    // Bug caught: API gets only the latest message — multi-turn context lost.
+    await mockAiChat(page, 'ok');
+    await openAiAssistant(page);
+
+    await page.getByRole('button', { name: 'Bozor umumiy holati qanday?' }).click();
+    await expect(page.getByText(FIXED_REPLY)).toBeVisible();
+
+    await expect(page.getByTestId('ai-history')).toBeVisible();
+
+    const secondRequest = page.waitForRequest(
+      (req) => req.url().includes('/api/ai/chat') && req.method() === 'POST'
+    );
+    await typeAiMessage(page, 'Yana batafsil');
+    const req = await secondRequest;
+    const body = req.postDataJSON() as {
+      message?: string;
+      history?: Array<{ role: string; content: string }>;
+    };
+    expect(body.message).toBe('Yana batafsil');
+    expect(body.history?.length).toBeGreaterThanOrEqual(2);
+    expect(body.history?.[0]?.role).toBe('user');
+    expect(body.history?.some((t) => t.role === 'assistant')).toBeTruthy();
+  });
+
+  test('sidebar shows recent chats under AI Yordamchi', async ({ authedPage: page }) => {
+    // Bug caught: history lives inside chat pane instead of sidebar nav.
+    await mockAiChat(page, 'ok');
+    await openAiAssistant(page);
+
+    await page.getByRole('button', { name: 'Bozor umumiy holati qanday?' }).click();
+    await expect(page.getByText(FIXED_REPLY)).toBeVisible();
+
+    const history = page.getByTestId('ai-history');
+    await expect(history).toBeVisible();
+    await expect(history.getByText(/Bozor umumiy holati/i)).toBeVisible();
+    await expect(page.getByTestId('ai-chat-root').getByTestId('ai-history')).toHaveCount(0);
   });
 });

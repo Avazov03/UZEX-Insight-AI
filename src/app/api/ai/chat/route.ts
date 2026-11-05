@@ -96,7 +96,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'OPENAI_API_KEY missing' }, { status: 500 });
     }
 
-    const body = (await req.json()) as { message?: string; locale?: string };
+    const body = (await req.json()) as {
+      message?: string;
+      locale?: string;
+      history?: Array<{ role?: string; content?: string }>;
+    };
     const message = body.message?.trim();
     if (!message) {
       return NextResponse.json({ ok: false, error: 'message required' }, { status: 400 });
@@ -106,19 +110,45 @@ export async function POST(req: Request) {
     const language =
       locale === 'ru' ? 'Russian' : locale === 'en' ? 'English' : 'Uzbek (Latin script)';
 
+    const history = (body.history ?? [])
+      .filter(
+        (turn): turn is { role: 'user' | 'assistant'; content: string } =>
+          (turn.role === 'user' || turn.role === 'assistant') &&
+          typeof turn.content === 'string' &&
+          turn.content.trim().length > 0
+      )
+      .slice(-24)
+      .map((turn) => ({
+        role: turn.role,
+        content: turn.content.trim().slice(0, 4000)
+      }));
+
     const client = new OpenAI({ apiKey });
     const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
       {
         role: 'system',
-        content: `You are UZEX Insight AI, a commodity exchange market analyst.
-Use tools for any numbers. Never invent statistics.
-Product names in the DB are mostly Russian (e.g. хлопок for paxta/cotton). Pass Russian keywords to tools when useful.
-Dataset is synthetic test data (not live UZEX secrets). Mention that briefly once.
-Answer in ${language}. Be concise and human-readable.
-Use short paragraphs and bullet lists with - when listing.
-Never paste raw JSON, code blocks, or tool payloads in the reply — only natural language with key figures.`
+        content: `You are UZEX Insight AI — a specialized commodity exchange market analyst for the Uzbekistan Republican Commodity Exchange (UZEX) synthetic deal dataset in this app.
+
+SCOPE (strict):
+- Only answer questions about UZEX market data in this product: deals, contracts, products, prices, regions, brokers, participants, delivery risk, year comparisons, and how to use this dashboard.
+- If the user asks about unrelated topics (coding, politics, general knowledge, other companies, homework, jokes, medical/legal advice, etc.), politely refuse in 1–2 short sentences and redirect them to ask about UZEX market analytics. Do not answer the off-topic request.
+- Follow-up questions may omit product names — use prior conversation context.
+
+DATA RULES:
+- Use tools for any numbers. Never invent statistics.
+- Product names in the DB are mostly Russian (e.g. хлопок for paxta/cotton). Pass Russian keywords to tools when useful.
+- Dataset is synthetic test data (not live UZEX secrets). Mention that briefly once per conversation if relevant.
+
+STYLE:
+- Answer in ${language}. Be concise and human-readable.
+- Use short paragraphs and bullet lists with - when listing.
+- Never paste raw JSON, code blocks, or tool payloads in the reply — only natural language with key figures.`
       },
+      ...history.map((turn) => ({
+        role: turn.role,
+        content: turn.content
+      })),
       { role: 'user', content: message }
     ];
 

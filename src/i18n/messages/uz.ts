@@ -230,6 +230,9 @@ export const uz = {
     analystHint: 'Live AI · PostgreSQL tahlil · manbali javob',
     askMarket: 'Biror narsani so‘rang',
     askHint: 'Narxlar, hajm, risk va ishtirokchilar bo‘yicha tahlil so‘rang.',
+    startPrompt: 'Nimadan boshlaymiz?',
+    thinking: 'O‘ylamoqda…',
+    searching: 'Qidirilmoqda…',
     analyzing: 'Tahlil qilinmoqda…',
     send: 'Yuborish',
     ready: 'tayyor',
@@ -250,7 +253,21 @@ export const uz = {
     toolCompare: 'Yillar taqqosi',
     dataset: 'Dataset',
     datasetBody:
-      '500 000 bitim · 6 616 shartnoma · sunʼiy test maʼlumotlari (README). Natijalar real UZEX bozor statistikasi emas.'
+      '500 000 bitim · 6 616 shartnoma · sunʼiy test maʼlumotlari (README). Natijalar real UZEX bozor statistikasi emas.',
+    history: 'Tarix',
+    workspace: 'Ish maydoni',
+    workspaceHintClosed: 'Bosib oldingi suhbatlarni oching',
+    workspaceHintOpen: 'Oldingi suhbatlar — pin, nomlash, o‘chirish',
+    pinned: 'Qadalgan',
+    recent: 'So‘nggi',
+    rename: 'Qayta nomlash',
+    delete: 'O‘chirish',
+    pin: 'Qadash',
+    unpin: 'Qadalganini olib tashlash',
+    untitled: 'Yangi suhbat',
+    emptyHistory: 'Hali suhbat yo‘q',
+    scopeHint: 'Faqat UZEX bozor tahlili — boshqa mavzularga javob bermaydi.',
+    deleteConfirm: 'Bu suhbat o‘chirilsinmi?'
   }
 };
 

@@ -35,6 +35,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Icons } from '../icons';
 import { OrgSwitcher } from '../org-switcher';
 import { useI18n, type MessageKey } from '@/i18n';
+import { AiNavHistory } from '@/features/ai-assistant/components/ai-nav-history';
 
 export default function AppSidebar() {
   const pathname = usePathname();
@@ -66,9 +67,13 @@ export default function AppSidebar() {
               <SidebarGroupLabel>{t(group.label as MessageKey)}</SidebarGroupLabel>
             )}
             <SidebarMenu>
-              {group.items.map((item) => (
-                <NavMainItem key={item.title} item={item} pathname={pathname} />
-              ))}
+              {group.items.map((item) =>
+                item.url === '/dashboard/ai-assistant' ? (
+                  <AiNavHistory key={item.title} />
+                ) : (
+                  <NavMainItem key={item.title} item={item} pathname={pathname} />
+                )
+              )}
             </SidebarMenu>
           </SidebarGroup>
         ))}

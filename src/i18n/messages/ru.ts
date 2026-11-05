@@ -232,6 +232,9 @@ export const ru: MessageTree = {
     analystHint: 'Live AI · PostgreSQL · ответы с источниками',
     askMarket: 'Спросите что-нибудь',
     askHint: 'Спросите о ценах, объёмах, рисках и участниках.',
+    startPrompt: 'С чего начнём?',
+    thinking: 'Думаю…',
+    searching: 'Ищу…',
     analyzing: 'Анализ…',
     send: 'Отправить',
     ready: 'готово',
@@ -252,6 +255,20 @@ export const ru: MessageTree = {
     toolCompare: 'Сравнение лет',
     dataset: 'Датасет',
     datasetBody:
-      '500 000 сделок · 6 616 контрактов · синтетические тестовые данные (README). Не реальная статистика UZEX.'
+      '500 000 сделок · 6 616 контрактов · синтетические тестовые данные (README). Не реальная статистика UZEX.',
+    history: 'История',
+    workspace: 'Рабочая область',
+    workspaceHintClosed: 'Нажмите, чтобы открыть прошлые диалоги',
+    workspaceHintOpen: 'Прошлые диалоги — закрепить, переименовать, удалить',
+    pinned: 'Закреплённые',
+    recent: 'Недавние',
+    rename: 'Переименовать',
+    delete: 'Удалить',
+    pin: 'Закрепить',
+    unpin: 'Открепить',
+    untitled: 'Новый диалог',
+    emptyHistory: 'Пока нет диалогов',
+    scopeHint: 'Только аналитика рынка UZEX — другие темы отклоняются.',
+    deleteConfirm: 'Удалить этот диалог?'
   }
 };

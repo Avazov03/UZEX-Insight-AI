@@ -1,5 +1,5 @@
 import { requireAuth } from '@/lib/auth-guard';
-import { LocalizedPageContainer } from '@/components/i18n/localized-page-container';
+import PageContainer from '@/components/layout/page-container';
 import { LiveAiChat } from '@/features/ai-assistant/components/live-ai-chat';
 
 export const metadata = {
@@ -10,12 +10,8 @@ export default async function Page() {
   await requireAuth();
 
   return (
-    <LocalizedPageContainer
-      titleKey='pages.aiAssistant.title'
-      descriptionKey='pages.aiAssistant.description'
-      contentWidth='readable'
-    >
+    <PageContainer contentWidth='full'>
       <LiveAiChat />
-    </LocalizedPageContainer>
+    </PageContainer>
   );
 }

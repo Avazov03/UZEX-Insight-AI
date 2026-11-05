@@ -65,6 +65,8 @@ import {
   IconPaperclip,
   IconPhone,
   IconPhoto,
+  IconPin,
+  IconPinned,
   IconPizza,
   IconPlus,
   IconProps,
@@ -118,6 +120,8 @@ export const Icons = {
   search: IconSearch,
   settings: IconSettings,
   trash: IconTrash,
+  pin: IconPin,
+  pinned: IconPinned,
 
   // Navigation / Chevrons
   chevronDown: IconChevronDown,

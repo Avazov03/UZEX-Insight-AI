@@ -232,6 +232,9 @@ export const en: MessageTree = {
     analystHint: 'Live AI · PostgreSQL analytics · sourced answers',
     askMarket: 'Ask something',
     askHint: 'Ask about prices, volume, risk, and participants.',
+    startPrompt: 'Where shall we start?',
+    thinking: 'Thinking…',
+    searching: 'Searching…',
     analyzing: 'Analyzing…',
     send: 'Send',
     ready: 'ready',
@@ -252,6 +255,20 @@ export const en: MessageTree = {
     toolCompare: 'Year compare',
     dataset: 'Dataset',
     datasetBody:
-      '500,000 deals · 6,616 contracts · synthetic test data (README). Not real UZEX statistics.'
+      '500,000 deals · 6,616 contracts · synthetic test data (README). Not real UZEX statistics.',
+    history: 'History',
+    workspace: 'Workspace',
+    workspaceHintClosed: 'Click to open previous chats',
+    workspaceHintOpen: 'Previous chats — pin, rename, delete',
+    pinned: 'Pinned',
+    recent: 'Recent',
+    rename: 'Rename',
+    delete: 'Delete',
+    pin: 'Pin',
+    unpin: 'Unpin',
+    untitled: 'New chat',
+    emptyHistory: 'No conversations yet',
+    scopeHint: 'UZEX market analytics only — off-topic questions are declined.',
+    deleteConfirm: 'Delete this conversation?'
   }
 };
