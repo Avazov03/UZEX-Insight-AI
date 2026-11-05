@@ -157,7 +157,35 @@ const MONTH_UZ = [
   'Dek'
 ];
 
+/** Static imported dataset → short TTL cache is safe and avoids re-scanning 500k rows. */
+const DASHBOARD_CACHE_TTL_MS = 10 * 60 * 1000;
+
+let dashboardCache: { expiresAt: number; data: MarketDashboard } | null = null;
+let dashboardInflight: Promise<MarketDashboard> | null = null;
+
 export async function getMarketDashboard(): Promise<MarketDashboard> {
+  const now = Date.now();
+  if (dashboardCache && dashboardCache.expiresAt > now) {
+    return dashboardCache.data;
+  }
+  if (dashboardInflight) return dashboardInflight;
+
+  dashboardInflight = loadMarketDashboard()
+    .then((data) => {
+      dashboardCache = {
+        data,
+        expiresAt: Date.now() + DASHBOARD_CACHE_TTL_MS
+      };
+      return data;
+    })
+    .finally(() => {
+      dashboardInflight = null;
+    });
+
+  return dashboardInflight;
+}
+
+async function loadMarketDashboard(): Promise<MarketDashboard> {
   const [
     overview,
     risk,

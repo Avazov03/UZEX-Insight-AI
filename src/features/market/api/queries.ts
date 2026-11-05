@@ -7,6 +7,8 @@ export const marketQueries = {
     queryOptions({
       queryKey: [...marketQueries.all(), 'dashboard'] as const,
       queryFn: () => fetchMarketDashboard(),
-      staleTime: 60_000
+      // Mirror server TTL — dataset is static import, safe to keep warm
+      staleTime: 10 * 60_000,
+      gcTime: 30 * 60_000
     })
 };
