@@ -65,6 +65,22 @@ function toolLabel(name: string, t: (key: string) => string): string {
       return t('ai.toolRisk');
     case 'compare_years':
       return t('ai.toolCompare');
+    case 'get_deal_by_number':
+      return t('ai.toolDeal');
+    case 'get_contract_by_number':
+      return t('ai.toolContract');
+    case 'lookup_participant':
+      return t('ai.toolParticipant');
+    case 'lookup_broker':
+      return t('ai.toolBroker');
+    case 'get_status_glossary':
+      return t('ai.toolStatus');
+    case 'get_trade_type_stats':
+      return t('ai.toolAuction');
+    case 'analyze_deadline_breaches':
+      return t('ai.toolDeadlines');
+    case 'get_usd_rate':
+      return t('ai.toolUsd');
     default:
       return name;
   }

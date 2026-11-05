@@ -1,10 +1,18 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import {
+  analyzeDeadlineBreaches,
   analyzeProductPrices,
   compareYears,
   detectDeliveryRisk,
-  getMarketOverview
+  getContractByNumber,
+  getDealByNumber,
+  getMarketOverview,
+  getStatusGlossary,
+  getTradeTypeStats,
+  getUsdRate,
+  lookupBroker,
+  lookupParticipant
 } from '@/lib/uzex-analytics';
 
 export const runtime = 'nodejs';
@@ -12,6 +20,116 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+  {
+    type: 'function',
+    function: {
+      name: 'get_deal_by_number',
+      description:
+        'REQUIRED for any question about a specific deal/lot/transaction number (Номер сделки). Returns full deal with product, prices, parties, brokers, deadlines. Example: 280097.',
+      parameters: {
+        type: 'object',
+        properties: {
+          dealNumber: {
+            type: 'string',
+            description: 'Deal number digits, e.g. "280097" or "280096"'
+          }
+        },
+        required: ['dealNumber']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_contract_by_number',
+      description:
+        'Lookup a contract by Номер контракта including payment_days and delivery_days.',
+      parameters: {
+        type: 'object',
+        properties: {
+          contractNumber: { type: 'string' }
+        },
+        required: ['contractNumber']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'lookup_participant',
+      description: 'Find a trading participant by INN or company name; include seller/buyer deal stats.',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'INN or name fragment' }
+        },
+        required: ['query']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'lookup_broker',
+      description: 'Find a broker by code (e.g. BK042) or name; include deal counts.',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string' }
+        },
+        required: ['query']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_status_glossary',
+      description:
+        'Explain deal statuses (Новый, Не подписан, Заключен, Ждёт оплату, Оплачен, Исполнен, Исполнен(Частично), Аннулирован) with README meanings and live counts.'
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_trade_type_stats',
+      description:
+        'Stats by auction/trade type (Английский / Обратный / Двусторонний) with start vs final unit price.',
+      parameters: {
+        type: 'object',
+        properties: {
+          year: { type: 'integer' }
+        }
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'analyze_deadline_breaches',
+      description:
+        'Find payment/delivery deadline breaches using contracts.payment_days and delivery_days formulas from README.',
+      parameters: {
+        type: 'object',
+        properties: {
+          limit: { type: 'integer' }
+        }
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_usd_rate',
+      description: 'Get USD/UZS rate on or before a date from usd_rates.',
+      parameters: {
+        type: 'object',
+        properties: {
+          date: { type: 'string', description: 'YYYY-MM-DD' }
+        }
+      }
+    }
+  },
   {
     type: 'function',
     function: {
@@ -29,7 +147,7 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
         properties: {
           productHint: {
             type: 'string',
-            description: 'Product keyword, e.g. хлопок, пахта, пшеница, bug‘doy'
+            description: 'Product keyword, e.g. хлопок, пахта, пшеница, сахар'
           },
           year: { type: 'integer', description: 'Year, default 2026' }
         },
@@ -65,6 +183,22 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
 async function runTool(name: string, argsJson: string) {
   const args = argsJson ? (JSON.parse(argsJson) as Record<string, unknown>) : {};
   switch (name) {
+    case 'get_deal_by_number':
+      return getDealByNumber(String(args.dealNumber ?? args.deal_no ?? ''));
+    case 'get_contract_by_number':
+      return getContractByNumber(String(args.contractNumber ?? args.contract_no ?? ''));
+    case 'lookup_participant':
+      return lookupParticipant(String(args.query ?? ''));
+    case 'lookup_broker':
+      return lookupBroker(String(args.query ?? ''));
+    case 'get_status_glossary':
+      return getStatusGlossary();
+    case 'get_trade_type_stats':
+      return getTradeTypeStats(args.year ? Number(args.year) : undefined);
+    case 'analyze_deadline_breaches':
+      return analyzeDeadlineBreaches(args.limit ? Number(args.limit) : 10);
+    case 'get_usd_rate':
+      return getUsdRate(args.date ? String(args.date) : undefined);
     case 'get_market_overview':
       return getMarketOverview();
     case 'analyze_product_prices':
@@ -87,6 +221,11 @@ async function runTool(name: string, argsJson: string) {
 
 function sse(event: string, data: unknown): string {
   return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+}
+
+function extractDealNumberHint(message: string): string | null {
+  const m = message.match(/(?:^|\D)(\d{5,8})(?:\D|$)/);
+  return m?.[1] ?? null;
 }
 
 export async function POST(req: Request) {
@@ -124,43 +263,56 @@ export async function POST(req: Request) {
         content: turn.content.trim().slice(0, 4000)
       }));
 
+    const dealHint = extractDealNumberHint(message);
+
     const client = new OpenAI({ apiKey });
     const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
       {
         role: 'system',
-        content: `You are UZEX Insight AI — a specialized commodity exchange market analyst for the Uzbekistan Republican Commodity Exchange (UZEX) synthetic deal dataset in this app.
+        content: `You are UZEX Insight AI — analyst for the UZEX synthetic exchange dataset in PostgreSQL (500k deals).
 
-LANGUAGE (highest priority — overrides UI locale and chat history language):
-- Always reply in the language of the user's LATEST message. Detect it from that message text itself.
-- Do NOT lock to the app/UI language. Do NOT keep answering in the previous reply's language if the latest user message switched language.
-- Examples: Uzbek prompt → Uzbek reply; Russian prompt → Russian reply; English prompt → English reply — even if the sidebar/UI is in another language.
-- Only if the latest message language is truly ambiguous, fall back to ${uiLanguageFallback}.
+LANGUAGE (highest priority):
+- Reply in the language of the user's LATEST message (UZ/RU/EN). Ignore UI locale and prior reply language if the latest message switched.
+- If ambiguous, fall back to ${uiLanguageFallback}.
+
+CRITICAL LOOKUP RULES:
+- If the user mentions a deal/lot/transaction number (e.g. 280097), ALWAYS call get_deal_by_number FIRST. Never say "not found" without that tool.
+- If they mention a contract number, call get_contract_by_number.
+- If they mention broker code like BK042, call lookup_broker.
+- If they mention INN or company name, call lookup_participant.
+- Status meanings → get_status_glossary. Auction types → get_trade_type_stats. Deadline breaches → analyze_deadline_breaches.
+- Never invent numbers, company names, products, or dates. If a tool returns found:false, say clearly that it is not in the dataset.
+
+COLUMN MAPPING (never confuse):
+- trade_type = Тип торгов (auction type) — NOT the product
+- product_name = Наименование товара
+- start_price = Стартовая цена PER UNIT
+- amount = Сумма сделки TOTAL
+- final unit price = amount / (quantity * lot)
+- contract_no = Номер контракта — NOT a price
+- quantity = Количество; lot = Лот; delivered compared to quantity
+
+DEADLINES (README):
+- Payment due = deal_date + payment_days (calendar days)
+- Delivery due = actual payment_date + delivery_days (calendar days)
+- Status snapshot date = 2026-10-30 (not live realtime)
+- Ждёт оплату = signed Spot awaiting payment; Заключен = signed Forward/Futures awaiting payment
+- Fully completed ONLY: Исполнен. Оплачен is paid but not fully delivered. Исполнен(Частично) is partial.
 
 SCOPE:
-- Answer questions about UZEX market data in this product: deals, contracts, products, prices, regions, brokers, participants, delivery risk, year comparisons.
-- Also answer product questions about this UZEX Insight AI dashboard itself: what it is for, what problems it helps solve, benefits for brokers/analysts/traders, and how to use its pages/features. Be concrete and helpful — do not refuse these.
-- If the user asks about unrelated topics (coding, politics, general knowledge, other companies, homework, jokes, medical/legal advice, etc.), politely refuse in 1–2 short sentences and redirect them to UZEX market analytics or this product. Do not answer the off-topic request.
-- Follow-up questions may omit product names — use prior conversation context for facts, but still match the latest message language.
-
-DATA RULES:
-- Use tools for any numbers. Never invent statistics.
-- Product names in the DB are mostly Russian (e.g. хлопок-сырец for paxta/cotton raw). Pass Russian keywords to tools when useful.
-- For prices prefer avg_unit_price_mln_ton (mln so'm per ton; kg units are normalized ×1000). avg_unit_price is raw so'm per deal unit — do not call it "mln" unless converted.
-- Amount totals: divide by 1e12 for trillion so'm (tn), by 1e6 for million so'm (mln).
-- Dataset is synthetic test data in PostgreSQL (not live UZEX secrets). Mention that briefly once per conversation if relevant.
-- 2026 may be year-to-date (through late October in the dataset) — say so when comparing to full 2025.
+- UZEX market data + this product's features.
+- Off-topic → short refuse + redirect.
 
 STYLE:
-- Be concise and human-readable.
-- Use short paragraphs and bullet lists with - when listing.
-- Never paste raw JSON, code blocks, or tool payloads in the reply — only natural language with key figures.
+- Concise, human, bullets when listing.
+- Cite key figures from tools; mention source tables when useful (deals/contracts/participants/brokers).
+- Never paste raw JSON.
+${dealHint ? `\nHINT: Latest message likely refers to deal_no=${dealHint} — call get_deal_by_number.` : ''}
 ${
   body.mode === 'deep'
     ? `
-DEEP ANALYSIS MODE (user enabled):
-- Be more thorough: structure the answer, compare dimensions, call out risks/caveats, and end with a short actionable takeaway.
-- Still stay within scope and use tools for numbers.`
+DEEP MODE: more structured analysis, risks, short takeaway; still tool-grounded.`
     : ''
 }`
       },
@@ -181,18 +333,29 @@ DEEP ANALYSIS MODE (user enabled):
         try {
           send('status', { phase: 'analyzing' });
 
+          // If deal number is obvious, prefetch so the model always has facts
+          if (dealHint) {
+            send('status', { phase: 'tool', name: 'get_deal_by_number' });
+            const prefetched = await getDealByNumber(dealHint);
+            messages.push({
+              role: 'system',
+              content: `Prefetched get_deal_by_number(${dealHint}) result (authoritative):\n${JSON.stringify(prefetched)}`
+            });
+          }
+
           let completion = await client.chat.completions.create({
             model,
             messages,
             tools,
             tool_choice: 'auto',
-            temperature: 0.2
+            temperature: 0.1
           });
 
           let choice = completion.choices[0]?.message;
           const toolTraces: Array<{ name: string }> = [];
+          if (dealHint) toolTraces.push({ name: 'get_deal_by_number' });
 
-          for (let i = 0; i < 3; i++) {
+          for (let i = 0; i < 5; i++) {
             const toolCalls = choice?.tool_calls;
             if (!toolCalls?.length) break;
 
@@ -217,7 +380,7 @@ DEEP ANALYSIS MODE (user enabled):
               model,
               messages,
               tools,
-              temperature: 0.2
+              temperature: 0.1
             });
             choice = completion.choices[0]?.message;
           }
@@ -238,7 +401,7 @@ DEEP ANALYSIS MODE (user enabled):
               model,
               messages,
               tool_choice: 'none',
-              temperature: 0.2,
+              temperature: 0.1,
               stream: true
             });
             for await (const part of finalStream) {
