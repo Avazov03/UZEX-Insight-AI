@@ -3,6 +3,7 @@ import { LocalizedPageContainer } from '@/components/i18n/localized-page-contain
 import { BrokersView } from '@/features/brokers/components/brokers-view';
 import { MarketDashboardBoundary } from '@/features/market/components/market-dashboard-boundary';
 
+export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Brokers' };
 
 export default async function Page() {

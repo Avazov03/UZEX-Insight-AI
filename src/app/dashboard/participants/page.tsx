@@ -3,6 +3,7 @@ import { LocalizedPageContainer } from '@/components/i18n/localized-page-contain
 import { ParticipantsView } from '@/features/participants/components/participants-view';
 import { MarketDashboardBoundary } from '@/features/market/components/market-dashboard-boundary';
 
+export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Participants' };
 
 export default async function Page() {

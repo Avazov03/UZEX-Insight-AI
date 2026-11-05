@@ -3,6 +3,8 @@ import { OverviewShell } from '@/features/overview/components/overview-shell';
 import { MarketDashboardBoundary } from '@/features/market/components/market-dashboard-boundary';
 import React from 'react';
 
+export const dynamic = 'force-dynamic';
+
 export default async function OverViewLayout({
   sales,
   pie_stats,

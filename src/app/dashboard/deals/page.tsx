@@ -3,6 +3,7 @@ import { LocalizedPageContainer } from '@/components/i18n/localized-page-contain
 import { DealsView } from '@/features/deals/components/deals-view';
 import { MarketDashboardBoundary } from '@/features/market/components/market-dashboard-boundary';
 
+export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Deals & Contracts' };
 
 export default async function Page() {

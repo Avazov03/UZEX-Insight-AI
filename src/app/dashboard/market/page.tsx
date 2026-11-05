@@ -3,6 +3,7 @@ import { LocalizedPageContainer } from '@/components/i18n/localized-page-contain
 import { MarketAnalyticsView } from '@/features/market/components/market-analytics-view';
 import { MarketDashboardBoundary } from '@/features/market/components/market-dashboard-boundary';
 
+export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Market Analytics' };
 
 export default async function Page() {

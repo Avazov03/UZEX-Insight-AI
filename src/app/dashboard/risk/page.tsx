@@ -3,6 +3,7 @@ import { LocalizedPageContainer } from '@/components/i18n/localized-page-contain
 import { RiskView } from '@/features/risk/components/risk-view';
 import { MarketDashboardBoundary } from '@/features/market/components/market-dashboard-boundary';
 
+export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Risk' };
 
 export default async function Page() {
