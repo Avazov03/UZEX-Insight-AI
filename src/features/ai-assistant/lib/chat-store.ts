@@ -88,7 +88,7 @@ export function loadThreads(): ChatThread[] {
             role: m.role,
             text: m.text,
             tools: m.tools,
-            pending: false
+            pending: Boolean(m.pending)
           }))
       }));
   } catch {
@@ -96,21 +96,28 @@ export function loadThreads(): ChatThread[] {
   }
 }
 
-export function saveThreads(threads: ChatThread[]): void {
+export function saveThreads(
+  threads: ChatThread[],
+  opts?: { silent?: boolean }
+): void {
   if (typeof window === 'undefined') return;
   try {
     const cleaned = sortThreads(threads)
       .map((t) => ({
         ...t,
-        messages: t.messages.filter((m) => !m.pending)
+        // Keep pending assistant bubble so a mid-stream reload still has the slot
+        messages: t.messages
       }))
-      .filter((t) => t.messages.length > 0)
+      .filter((t) => t.messages.some((m) => m.text.trim().length > 0 || m.pending))
       .slice(0, MAX_THREADS);
     const next = JSON.stringify(cleaned);
     const prev = window.localStorage.getItem(THREADS_STORAGE_KEY);
     if (prev === next) return;
     window.localStorage.setItem(THREADS_STORAGE_KEY, next);
-    window.dispatchEvent(new CustomEvent(THREADS_EVENT));
+    // Silent while streaming — avoids THREADS_EVENT → sync wiping the live reply
+    if (!opts?.silent) {
+      window.dispatchEvent(new CustomEvent(THREADS_EVENT));
+    }
   } catch {
     // quota / private mode — ignore
   }

@@ -289,44 +289,43 @@ export function LiveAiChat() {
   }, []);
 
   useEffect(() => {
-    /** localStorage is source of truth — never resurrect sidebar-deleted threads. */
+    /**
+     * localStorage is source of truth for *other* threads.
+     * Never replace the active in-flight thread — that was wiping streamed answers.
+     */
     function syncFromStore(preferredActiveId?: string | null) {
       const stored = sortThreads(loadThreads());
       const storedIds = new Set(stored.map((t) => t.id));
       const active = preferredActiveId ?? activeIdRef.current;
 
       setThreads((prev) => {
-        const keepActive =
-          prev.find((t) => {
-            if (t.id !== active) return false;
-            if (storedIds.has(t.id)) return false;
-            // empty draft or in-flight reply not flushed yet
-            return (
-              loading ||
-              t.messages.some((m) => m.pending) ||
-              !t.messages.some((m) => m.text.trim() && !m.pending)
-            );
-          }) ?? null;
+        const prevActive = prev.find((t) => t.id === active);
+        const inFlight =
+          !!prevActive &&
+          (loading ||
+            prevActive.messages.some((m) => m.pending) ||
+            // brand-new empty draft not yet in storage
+            (!storedIds.has(prevActive.id) &&
+              !prevActive.messages.some((m) => m.text.trim() && !m.pending)));
 
-        const merged = keepActive
-          ? sortThreads([keepActive, ...stored.filter((t) => t.id !== keepActive.id)])
-          : stored;
+        if (inFlight && prevActive) {
+          const others = stored.filter((t) => t.id !== prevActive.id);
+          return sortThreads([prevActive, ...others]);
+        }
 
-        if (merged.length) return merged;
-        if (keepActive) return [keepActive];
+        if (stored.length) return stored;
+        if (prevActive) return [prevActive];
         return [createThread()];
       });
 
       if (active && !storedIds.has(active)) {
-        const stillHeld = threadsRef.current.some((t) => {
-          if (t.id !== active) return false;
-          return (
-            loading ||
-            t.messages.some((m) => m.pending) ||
-            !t.messages.some((m) => m.text.trim() && !m.pending)
-          );
-        });
-        if (!stillHeld) {
+        const prevActive = threadsRef.current.find((t) => t.id === active);
+        const hold =
+          loading ||
+          !!prevActive?.messages.some((m) => m.pending) ||
+          (!!prevActive &&
+            !prevActive.messages.some((m) => m.text.trim() && !m.pending));
+        if (!hold) {
           const nextId = stored[0]?.id;
           if (nextId) {
             setActiveId(nextId);
@@ -352,6 +351,7 @@ export function LiveAiChat() {
     }
 
     function onThreadsChanged() {
+      // While answering, only prune deleted siblings — keep streaming text
       syncFromStore();
     }
 
@@ -393,8 +393,9 @@ export function LiveAiChat() {
     // Persist without resurrecting threads the sidebar already deleted
     const storedIds = new Set(loadThreads().map((t) => t.id));
     const toSave = threads.filter((t) => storedIds.has(t.id) || t.id === activeId);
-    saveThreads(toSave);
-  }, [threads, hydrated, activeId]);
+    // Silent during stream so THREADS_EVENT cannot clobber the live answer
+    saveThreads(toSave, { silent: loading });
+  }, [threads, hydrated, activeId, loading]);
 
   useEffect(() => {
     if (!hydrated || !activeId) return;
